@@ -32,8 +32,9 @@ st.markdown("""
         text-decoration: none; border-radius: 8px; font-weight: bold; margin-top: 10px; 
         text-align: center; width: 100%;
     }
-    .status-red { background-color: #f8d7da; color: #721c24; padding: 10px; border-radius: 8px; text-align: center; font-weight: bold; margin-bottom: 10px; }
-    .status-green { background-color: #d4edda; color: #155724; padding: 10px; border-radius: 8px; text-align: center; font-weight: bold; margin-bottom: 10px; }
+    /* Classi dinamiche per i colori */
+    .status-alert { background-color: #f8d7da; color: #721c24; padding: 15px; border-radius: 10px; text-align: center; font-weight: bold; border: 1px solid #f5c6cb; }
+    .status-ok { background-color: #d4edda; color: #155724; padding: 15px; border-radius: 10px; text-align: center; font-weight: bold; border: 1px solid #c3e6cb; }
     </style>
     """, unsafe_allow_html=True)
 
@@ -56,12 +57,10 @@ def carica_archivio():
     try: return pd.read_csv('archivio_vincite.csv')
     except FileNotFoundError: return pd.DataFrame(columns=['Data', 'Punti', 'Euro_Netto'])
 
-# --- SIDEBAR (MENU NAVIGAZIONE) ---
+# --- SIDEBAR ---
 with st.sidebar:
     st.title("🍀 Menù")
     scelta = st.radio("Seleziona sezione:", ["🔍 Verifica Vincita", "📅 Stato Abbonamento", "💰 Calcolo Quote", "🏛️ Il Bottino"], index=0)
-    st.divider()
-    st.info("Inizio Abbonamento: 22 Gen 2026")
 
 # --- CONTENUTO PRINCIPALE ---
 st.title("🍀 Regalati un Sogno")
@@ -94,8 +93,7 @@ if scelta == "🔍 Verifica Vincita":
             if len(indovinati) >= 2: vincite.append((i, len(indovinati), indovinati))
         
         if vincite:
-            st.balloons()
-            play_audio("https://www.myinstants.com/media/sounds/ta-da.mp3")
+            st.balloons(); play_audio("https://www.myinstants.com/media/sounds/ta-da.mp3")
             testo_wa = "🥳 *VINCITA SUPERENALOTTO!*\n\n"
             for v in vincite:
                 st.success(f"🔥 **SCHEDINA {v[0]}:** {v[1]} PUNTI! ({v[2]})")
@@ -107,30 +105,34 @@ if scelta == "🔍 Verifica Vincita":
             st.warning("Nessuna vincita rilevata.")
 
 elif scelta == "📅 Stato Abbonamento":
-    st.subheader("📅 Gestione Abbonamento (15 Concorsi)")
-    fatti = st.slider("Concorsi passati", 0, 15, value=0)
-    st.info(f"Concorsi rimanenti: {15 - fatti} su 15")
+    st.subheader("📅 Gestione Abbonamento")
+    
+    # Slider per impostare i concorsi fatti
+    fatti = st.slider("Seleziona concorsi effettuati", 0, 15, value=0)
+    rimanenti = 15 - fatti
+    
+    # Logica colore dinamica basata sui concorsi rimanenti
+    if rimanenti <= 5:
+        st.markdown(f'<div class="status-alert">⚠️ ATTENZIONE: RIMANGONO SOLO {rimanenti} CONCORSI</div>', unsafe_allow_html=True)
+    else:
+        st.markdown(f'<div class="status-ok">📅 ABBONAMENTO ATTIVO: {rimanenti} CONCORSI RIMANENTI</div>', unsafe_allow_html=True)
+    
     st.progress(fatti / 15)
     
     st.divider()
-    
-    # --- SEZIONE CASSA SOCI SPOSTATA QUI ---
     st.subheader("👥 Cassa Soci")
     soci = ["VS", "MM", "ED", "AP", "GGC", "AM"]
     c1, c2 = st.columns(2)
     pagati = 0
     for i, s in enumerate(soci):
         with c1 if i < 3 else c2:
-            if st.checkbox(f"Pagato da {s}", key=f"paga_{s}"):
-                pagati += 1
+            if st.checkbox(f"Pagato da {s}", key=f"paga_{s}"): pagati += 1
     
-    if pagati < 6:
-        st.markdown(f'<div class="status-red">🔴 CASSA: {pagati}/6 SOCI HANNO PAGATO</div>', unsafe_allow_html=True)
-    else:
-        st.markdown('<div class="status-green">✅ CASSA COMPLETA! RINNOVO PRONTO</div>', unsafe_allow_html=True)
+    if pagati < 6: st.error(f"Cassa incompleta: {pagati}/6")
+    else: st.success("Cassa completa!")
     
     st.divider()
-    st.write("**Le nostre sestine:**")
+    st.write("**Sestine registrate:**")
     for i, s in enumerate(["03-10-17-40-85-86", "10-17-19-40-85-86", "17-19-40-75-85-86", "03-19-40-75-85-86", "03-10-19-75-85-86", "03-10-17-75-85-86"], 1):
         st.text(f"Schedina {i}: {s}")
 
@@ -140,12 +142,12 @@ elif scelta == "💰 Calcolo Quote":
     if premio > 0:
         netto = premio - ((premio - 500) * 0.20 if premio > 500 else 0)
         st.markdown(f'<div class="quota-box"><span class="quota-valore">{round(netto/6, 2)} € a testa</span></div>', unsafe_allow_html=True)
-        if st.button("💾 Salva nel Bottino"):
+        if st.button("💾 Salva"):
             salva_vincita("Vincita", netto)
             st.toast("Salvato!")
 
 elif scelta == "🏛️ Il Bottino":
-    st.subheader("🏛️ Archivio Storico")
+    st.subheader("🏛️ Archivio")
     df = carica_archivio()
     if not df.empty:
         st.dataframe(df, use_container_width=True)
