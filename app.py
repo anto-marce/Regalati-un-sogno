@@ -1,81 +1,60 @@
 import streamlit as st
-import pandas as pd
-import matplotlib.pyplot as plt
 
-st.set_page_config(page_title="Cassa Soci Sogno", page_icon="ðŸ’°")
+# 1. Impostazioni della pagina
+st.set_page_config(page_title="Regalati un Sogno", page_icon="🏆")
 
-# --- LOGICA COSTI ---
-COSTO_ESTRAZIONE_TOTALE = 6  # 1â‚¬ x 6 persone
-QUOTA_SOCIO = 15             # 15â‚¬ coprono 15 estrazioni
-# --------------------
+# 2. Definizione dei sistemi (le tue 6 colonne)
+SCHEDINE = [
+    {3, 10, 17, 40, 85, 86},  # Colonna 1
+    {10, 17, 19, 40, 85, 86}, # Colonna 2
+    {17, 19, 40, 75, 85, 86}, # Colonna 3
+    {3, 19, 40, 75, 85, 86},  # Colonna 4
+    {3, 10, 19, 75, 85, 86},  # Colonna 5
+    {3, 10, 17, 75, 85, 86}   # Colonna 6
+]
 
-st.title("ðŸ’° Gestione Cassa e Schedine")
+# 3. Creazione del Menu Laterale (Sidebar)
+st.sidebar.title("Menu")
+scelta = st.sidebar.radio("Vai a:", ["🍀 Verifica Vincite", "💰 Cassa Soci", "🏛️ Il Bottino"])
 
-# TAB 1: Controllo Vincite (Quello che abbiamo fatto prima)
-tab1, tab2 = st.tabs(["Check Schedine", "Cassa Soci"])
+# --- SEZIONE 1: VERIFICA VINCITE ---
+if scelta == "🍀 Verifica Vincite":
+    st.title("🏆 Il Sogno - SuperEnalotto")
+    st.write("Inserisci i 6 numeri estratti:")
 
-with tab1:
-    st.subheader("Hai vinto stasera?")
-    # ... (qui rimane il codice delle schedine che hai giÃ ) ...
-    st.info("Inserisci i numeri per verificare la vincita.")
+    # Inserimento numeri
+    cols = st.columns(6)
+    n1 = cols[0].number_input("1°", 1, 90, 1)
+    n2 = cols[1].number_input("2°", 1, 90, 1)
+    n3 = cols[2].number_input("3°", 1, 90, 1)
+    n4 = cols[3].number_input("4°", 1, 90, 1)
+    n5 = cols[4].number_input("5°", 1, 90, 1)
+    n6 = cols[5].number_input("6°", 1, 90, 1)
 
-with tab2:
-    st.subheader("Situazione Cassa Soci")
-    
-    # In un'app reale qui collegheremmo il Foglio Google. 
-    # Per ora simuliamo la memoria con un inserimento manuale veloce.
-    
-    soci = ["Tu", "Socio 2", "Socio 3", "Socio 4", "Socio 5", "Socio 6"]
-    pagati = []
-    
-    col1, col2 = st.columns(2)
-    
-    with col1:
-        st.write("Chi ha pagato gli ultimi 15â‚¬?")
-        for s in soci:
-            p = st.checkbox(f"{s} ha pagato", key=s)
-            if p: pagati.append(s)
+    if st.button("VERIFICA VINCITA"):
+        estratti = {n1, n2, n3, n4, n5, n6}
+        trovato = False
+        
+        for i, schedina in enumerate(SCHEDINE, 1):
+            indovinati = schedina.intersection(estratti)
+            punti = len(indovinati)
             
-    with col2:
-        estrazioni_fatte = st.number_input("Quante estrazioni abbiamo giocato in totale?", min_value=0, value=1)
+            if punti >= 2:
+                st.success(f"🎯 COLONNA {i}: HAI FATTO {punti} PUNTI! ({indovinati})")
+                st.balloons()
+                trovato = True
+                
+        if not trovato:
+            st.error("Nessuna vincita stasera. Avanti la prossima!")
 
-    # CALCOLI FINANZIARI
-    entrate = len(pagati) * QUOTA_SOCIO
-    uscite = estrazioni_fatte * COSTO_ESTRAZIONE_TOTALE
-    bilancio = entrate - uscite
+# --- SEZIONE 2: CASSA (In Standby) ---
+elif scelta == "💰 Cassa Soci":
+    st.title("💰 Gestione Cassa")
+    st.info("Questa sezione è in manutenzione. Qui vedrai entrate e uscite del gruppo.")
+    st.warning("Parte Cassa e Grafici momentaneamente in standby.")
 
-    # METRICHE
-    c1, c2, c3 = st.columns(3)
-    c1.metric("Entrate Totali", f"{entrate}â‚¬")
-    c2.metric("Uscite Totali", f"{uscite}â‚¬")
-    c3.metric("Fondo Cassa", f"{bilancio}â‚¬", delta=bilancio)
-
-    # GRAFICO
-    st.subheader("Andamento Cassa")
-    dati_grafico = pd.DataFrame({
-        'Categoria': ['Entrate', 'Uscite', 'Residuo'],
-        'Euro': [entrate, uscite, bilancio]
-    })
-    
-    fig, ax = plt.subplots()
-    colors = ['#2ecc71', '#e74c3c', '#f1c40f']
-    ax.bar(dati_grafico['Categoria'], dati_grafico['Euro'], color=colors)
-    st.pyplot(fig)
-
-    if bilancio < 0:
-        st.error("âš ï¸ ATTENZIONE: La cassa Ã¨ in rosso! Qualcuno deve pagare.")
-    else:
-        st.success(f"Siamo coperti per altre {int(bilancio/COSTO_ESTRAZIONE_TOTALE)} estrazioni.")
-        netto = premio - ((premio - 500) * 0.20 if premio > 500 else 0)
-        st.markdown(f'<div class="quota-box"><span class="quota-valore">{round(netto/6, 2)} â‚¬ a testa</span></div>', unsafe_allow_html=True)
-        if st.button("ðŸ’¾ Salva"):
-            salva_vincita("Vincita", netto)
-            st.toast("Salvato!")
-
-elif scelta == "ðŸ›ï¸ Il Bottino":
-    st.subheader("ðŸ›ï¸ Archivio")
-    df = carica_archivio()
-    if not df.empty:
-        st.dataframe(df, use_container_width=True)
-        st.metric("Totale Netto", f"{df['Euro_Netto'].sum():,.2f} â‚¬".replace(",", "."))
-    else: st.info("Archivio vuoto.")
+# --- SEZIONE 3: IL BOTTINO (In Standby) ---
+elif scelta == "🏛️ Il Bottino":
+    st.title("🏛️ Archivio Vincite")
+    st.write("Qui verranno salvate le vincite storiche del gruppo.")
+    st.info("Archivio vuoto o in fase di configurazione.")
