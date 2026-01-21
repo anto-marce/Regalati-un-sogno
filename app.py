@@ -18,7 +18,7 @@ st.markdown("""
         background-color: #f5f7f9;
     }
     </style>
-    """, unsafe_allow_status=True)
+    """, unsafe_allow_html=True)
 
 st.title("🍀 Regalati un Sogno")
 st.write("Benvenuti nel sistema del gruppo. Buona fortuna!")
