@@ -1,145 +1,71 @@
 import streamlit as st
-import re
 import pandas as pd
-from datetime import datetime
-import os
-import urllib.parse
+import matplotlib.pyplot as plt
 
-# 1. IMPOSTAZIONI PAGINA
-st.set_page_config(page_title="Regalati un Sogno", page_icon="🍀", layout="centered")
+st.set_page_config(page_title="Cassa Soci Sogno", page_icon="💰")
 
-# 2. STILE CSS
-st.markdown("""
-    <style>
-    div[data-testid="stNumberInput"] input { 
-        font-size: 22px !important; text-align: center !important; font-weight: 900 !important; 
-        color: #000000 !important; background-color: #ffffff !important; 
-        border: 2px solid #cccccc !important; border-radius: 5px;
-    }
-    .main { background-color: #f9fafb; }
-    .quota-box {
-        text-align: center; background-color: #e8f5e9; padding: 25px;
-        border-radius: 12px; border: 2px solid #c8e6c9; margin-top: 15px;
-    }
-    .quota-valore { font-size: 36px; font-weight: 800; color: #1b5e20; display: block; }
-    .ams-button {
-        display: inline-block; padding: 12px 20px; background-color: #003366; color: white !important;
-        text-decoration: none; border-radius: 8px; font-weight: bold; margin-bottom: 20px; 
-        text-align: center; width: 100%; border: 1px solid #002244;
-    }
-    .wa-button {
-        display: inline-block; padding: 12px 20px; background-color: #25D366; color: white !important;
-        text-decoration: none; border-radius: 8px; font-weight: bold; margin-top: 10px; 
-        text-align: center; width: 100%;
-    }
-    /* Classi dinamiche per i colori */
-    .status-alert { background-color: #f8d7da; color: #721c24; padding: 15px; border-radius: 10px; text-align: center; font-weight: bold; border: 1px solid #f5c6cb; }
-    .status-ok { background-color: #d4edda; color: #155724; padding: 15px; border-radius: 10px; text-align: center; font-weight: bold; border: 1px solid #c3e6cb; }
-    </style>
-    """, unsafe_allow_html=True)
+# --- LOGICA COSTI ---
+COSTO_ESTRAZIONE_TOTALE = 6  # 1€ x 6 persone
+QUOTA_SOCIO = 15             # 15€ coprono 15 estrazioni
+# --------------------
 
-# --- FUNZIONI AUDIO ---
-def play_audio(url):
-    audio_html = f'<audio autoplay="true" style="display:none;"><source src="{url}" type="audio/mpeg"></audio>'
-    st.components.v1.html(audio_html, height=0)
+st.title("💰 Gestione Cassa e Schedine")
 
-# --- FUNZIONI ARCHIVIO ---
-def salva_vincita(punti, importo_netto):
-    nuovo_dato = {'Data': datetime.now().strftime("%d/%m/%Y %H:%M"), 'Punti': punti, 'Euro_Netto': importo_netto}
-    try:
-        df = pd.read_csv('archivio_vincite.csv')
-        df = pd.concat([df, pd.DataFrame([nuovo_dato])], ignore_index=True)
-    except FileNotFoundError:
-        df = pd.DataFrame([nuovo_dato])
-    df.to_csv('archivio_vincite.csv', index=False)
+# TAB 1: Controllo Vincite (Quello che abbiamo fatto prima)
+tab1, tab2 = st.tabs(["Check Schedine", "Cassa Soci"])
 
-def carica_archivio():
-    try: return pd.read_csv('archivio_vincite.csv')
-    except FileNotFoundError: return pd.DataFrame(columns=['Data', 'Punti', 'Euro_Netto'])
+with tab1:
+    st.subheader("Hai vinto stasera?")
+    # ... (qui rimane il codice delle schedine che hai già) ...
+    st.info("Inserisci i numeri per verificare la vincita.")
 
-# --- SIDEBAR ---
-with st.sidebar:
-    st.title("🍀 Menù")
-    scelta = st.radio("Seleziona sezione:", ["🔍 Verifica Vincita", "📅 Stato Abbonamento", "💰 Calcolo Quote", "🏛️ Il Bottino"], index=0)
-
-# --- CONTENUTO PRINCIPALE ---
-st.title("🍀 Regalati un Sogno")
-
-if scelta == "🔍 Verifica Vincita":
-    st.subheader("📋 Verifica Estrazione")
-    st.markdown('<a href="https://www.adm.gov.it/portale/monopoli/giochi/giochi_num_total/superenalotto" target="_blank" class="ams-button">➡️ PASSO 1: Controlla Estrazione su Sito AMS</a>', unsafe_allow_html=True)
-
-    if 'n0' not in st.session_state:
-        for i in range(6): st.session_state[f'n{i}'] = 1
-
-    def distribuisci_numeri():
-        if st.session_state.incolla_qui:
-            numeri = re.findall(r'\d+', st.session_state.incolla_qui)
-            if len(numeri) >= 6:
-                for i in range(6): st.session_state[f"n{i}"] = int(numeri[i])
-
-    st.text_input("PASSO 2: Incolla sequenza e premi INVIO:", key="incolla_qui", on_change=distribuisci_numeri)
+with tab2:
+    st.subheader("Situazione Cassa Soci")
     
-    with st.expander("👁️ Numeri rilevati (Modifica se necessario)", expanded=False):
-        cols = st.columns(6)
-        final_nums = [cols[i].number_input(f"{i+1}°", 1, 90, key=f"n{i}") for i in range(6)]
-
-    if st.button("VERIFICA ORA 🚀", type="primary", use_container_width=True):
-        set_estratti = set(final_nums)
-        SCHEDINE = [{3,10,17,40,85,86}, {10,17,19,40,85,86}, {17,19,40,75,85,86}, {3,19,40,75,85,86}, {3,10,19,75,85,86}, {3,10,17,75,85,86}]
-        vincite = []
-        for i, sch in enumerate(SCHEDINE, 1):
-            indovinati = sorted(list(sch.intersection(set_estratti)))
-            if len(indovinati) >= 2: vincite.append((i, len(indovinati), indovinati))
-        
-        if vincite:
-            st.balloons(); play_audio("https://www.myinstants.com/media/sounds/ta-da.mp3")
-            testo_wa = "🥳 *VINCITA SUPERENALOTTO!*\n\n"
-            for v in vincite:
-                st.success(f"🔥 **SCHEDINA {v[0]}:** {v[1]} PUNTI! ({v[2]})")
-                testo_wa += f"✅ Schedina {v[0]}: *{v[1]} Punti* ({', '.join(map(str, v[2]))})\n"
-            testo_encoded = urllib.parse.quote(testo_wa)
-            st.markdown(f'<a href="https://wa.me/?text={testo_encoded}" target="_blank" class="wa-button">📲 PASSO 3: Invia Esito su WhatsApp</a>', unsafe_allow_html=True)
-        else:
-            play_audio("https://www.myinstants.com/media/sounds/sad-trombone.mp3")
-            st.warning("Nessuna vincita rilevata.")
-
-elif scelta == "📅 Stato Abbonamento":
-    st.subheader("📅 Gestione Abbonamento")
+    # In un'app reale qui collegheremmo il Foglio Google. 
+    # Per ora simuliamo la memoria con un inserimento manuale veloce.
     
-    # Slider per impostare i concorsi fatti
-    fatti = st.slider("Seleziona concorsi effettuati", 0, 15, value=0)
-    rimanenti = 15 - fatti
+    soci = ["Tu", "Socio 2", "Socio 3", "Socio 4", "Socio 5", "Socio 6"]
+    pagati = []
     
-    # Logica colore dinamica basata sui concorsi rimanenti
-    if rimanenti <= 5:
-        st.markdown(f'<div class="status-alert">⚠️ ATTENZIONE: RIMANGONO SOLO {rimanenti} CONCORSI</div>', unsafe_allow_html=True)
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        st.write("Chi ha pagato gli ultimi 15€?")
+        for s in soci:
+            p = st.checkbox(f"{s} ha pagato", key=s)
+            if p: pagati.append(s)
+            
+    with col2:
+        estrazioni_fatte = st.number_input("Quante estrazioni abbiamo giocato in totale?", min_value=0, value=1)
+
+    # CALCOLI FINANZIARI
+    entrate = len(pagati) * QUOTA_SOCIO
+    uscite = estrazioni_fatte * COSTO_ESTRAZIONE_TOTALE
+    bilancio = entrate - uscite
+
+    # METRICHE
+    c1, c2, c3 = st.columns(3)
+    c1.metric("Entrate Totali", f"{entrate}€")
+    c2.metric("Uscite Totali", f"{uscite}€")
+    c3.metric("Fondo Cassa", f"{bilancio}€", delta=bilancio)
+
+    # GRAFICO
+    st.subheader("Andamento Cassa")
+    dati_grafico = pd.DataFrame({
+        'Categoria': ['Entrate', 'Uscite', 'Residuo'],
+        'Euro': [entrate, uscite, bilancio]
+    })
+    
+    fig, ax = plt.subplots()
+    colors = ['#2ecc71', '#e74c3c', '#f1c40f']
+    ax.bar(dati_grafico['Categoria'], dati_grafico['Euro'], color=colors)
+    st.pyplot(fig)
+
+    if bilancio < 0:
+        st.error("⚠️ ATTENZIONE: La cassa è in rosso! Qualcuno deve pagare.")
     else:
-        st.markdown(f'<div class="status-ok">📅 ABBONAMENTO ATTIVO: {rimanenti} CONCORSI RIMANENTI</div>', unsafe_allow_html=True)
-    
-    st.progress(fatti / 15)
-    
-    st.divider()
-    st.subheader("👥 Cassa Soci")
-    soci = ["VS", "MM", "ED", "AP", "GGC", "AM"]
-    c1, c2 = st.columns(2)
-    pagati = 0
-    for i, s in enumerate(soci):
-        with c1 if i < 3 else c2:
-            if st.checkbox(f"Pagato da {s}", key=f"paga_{s}"): pagati += 1
-    
-    if pagati < 6: st.error(f"Cassa incompleta: {pagati}/6")
-    else: st.success("Cassa completa!")
-    
-    st.divider()
-    st.write("**Sestine registrate:**")
-    for i, s in enumerate(["03-10-17-40-85-86", "10-17-19-40-85-86", "17-19-40-75-85-86", "03-19-40-75-85-86", "03-10-19-75-85-86", "03-10-17-75-85-86"], 1):
-        st.text(f"Schedina {i}: {s}")
-
-elif scelta == "💰 Calcolo Quote":
-    st.subheader("💰 Calcolo Netto")
-    premio = st.number_input("Lordo (€)", min_value=0.0, step=10.0)
-    if premio > 0:
+        st.success(f"Siamo coperti per altre {int(bilancio/COSTO_ESTRAZIONE_TOTALE)} estrazioni.")
         netto = premio - ((premio - 500) * 0.20 if premio > 500 else 0)
         st.markdown(f'<div class="quota-box"><span class="quota-valore">{round(netto/6, 2)} € a testa</span></div>', unsafe_allow_html=True)
         if st.button("💾 Salva"):
