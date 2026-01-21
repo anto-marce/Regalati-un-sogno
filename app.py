@@ -4,7 +4,7 @@ import re
 # 1. IMPOSTAZIONI PAGINA
 st.set_page_config(page_title="Regalati un Sogno", page_icon="🍀", layout="centered")
 
-# 2. STILE CSS (Mantenuto l'alto contrasto per la leggibilità)
+# 2. STILE CSS
 st.markdown("""
     <style>
     div[data-testid="stNumberInput"] input { 
@@ -24,16 +24,13 @@ st.markdown("""
 
 st.title("🍀 Regalati un Sogno")
 
-# --- FUNZIONI AUDIO ---
-def play_vincita():
-    # Jingle festoso (Trumpets/Fanfare)
-    audio_url = "https://www.myinstants.com/media/sounds/win_nS5A8vL.mp3"
-    st.components.v1.html(f'<audio autoplay><source src="{audio_url}" type="audio/mpeg"></audio>', height=0)
-
-def play_sconfitta():
-    # Suono "Wah Wah Wah" (Sad Trombone)
-    audio_url = "https://www.myinstants.com/media/sounds/mario-dies.mp3"
-    st.components.v1.html(f'<audio autoplay><source src="{audio_url}" type="audio/mpeg"></audio>', height=0)
+# --- NUOVE FUNZIONI AUDIO (Link più stabili) ---
+def play_audio(url):
+    st.components.v1.html(f"""
+        <audio autoplay>
+            <source src="{url}" type="audio/mpeg">
+        </audio>
+    """, height=0)
 
 # --- ALTRE FUNZIONI ---
 def numero_in_lettere(n):
@@ -98,14 +95,14 @@ with tab1:
             
             if vincite:
                 st.balloons()
-                play_vincita() # AUDIO VINCITA
+                # NUOVO JINGLE VINCITA (Fanfara)
+                play_audio("https://actions.google.com/sounds/v1/human_voices/applause.ogg")
                 for v in vincite:
                     st.success(f"🔥 **SCHEDINA {v[0]}:** {v[1]} PUNTI! ({v[2]})")
             else:
-                play_sconfitta() # AUDIO SCONFITTA
+                # NUOVO JINGLE SCONFITTA (Trombone triste)
+                play_audio("https://www.myinstants.com/media/sounds/sad-trombone.mp3")
                 st.warning("Nessuna vincita. Ritenta!")
-        else:
-            st.error("⚠️ Inserisci tutti i numeri.")
 
 with tab2:
     st.subheader("Le Sestine del Gruppo")
