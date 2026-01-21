@@ -21,10 +21,10 @@ st.markdown("""
         border-radius: 12px; border: 2px solid #c8e6c9; margin-top: 15px;
     }
     .quota-valore { font-size: 36px; font-weight: 800; color: #1b5e20; display: block; }
-    
-    /* Stile per i box stato nel menu */
-    .status-red { background-color: #f8d7da; color: #721c24; padding: 10px; border-radius: 8px; text-align: center; font-weight: bold; margin-bottom: 10px; border: 1px solid #f5c6cb; }
-    .status-green { background-color: #d4edda; color: #155724; padding: 10px; border-radius: 8px; text-align: center; font-weight: bold; margin-bottom: 10px; border: 1px solid #c3e6cb; }
+    .ams-button {
+        display: inline-block; padding: 10px 20px; background-color: #003366; color: white !important;
+        text-decoration: none; border-radius: 5px; font-weight: bold; margin-bottom: 20px; text-align: center; width: 100%;
+    }
     </style>
     """, unsafe_allow_html=True)
 
@@ -53,52 +53,43 @@ def carica_archivio():
     except FileNotFoundError:
         return pd.DataFrame(columns=['Data', 'Punti', 'Euro_Netto'])
 
-# --- SIDEBAR (MENU TOGGLE) & INFO ---
+# --- SIDEBAR (MENU TOGGLE) ---
 with st.sidebar:
     st.title("🍀 Menù")
-    # Menu di navigazione a pulsanti radio (Toggle)
     scelta = st.radio(
         "Seleziona sezione:",
         ["🔍 Verifica Vincita", "📅 Stato Abbonamento", "💰 Calcolo Quote", "🏛️ Il Bottino"],
         index=0
     )
-    
     st.divider()
-    
-    # LINK UFFICIALE AMS
-    st.markdown("### 🔗 Link Estrazioni")
-    st.markdown("[🌐 Sito Ufficiale AMS](https://www.adm.gov.it/portale/giochi/lotto-e-lotterie/superenalotto)", unsafe_allow_html=True)
-    
-    st.divider()
-    
-    # GESTIONE CASSA SOCI (Versione compatta nella sidebar)
-    st.subheader("👥 Cassa Rinnovo")
+    st.subheader("👥 Cassa Soci")
     soci = ["VS", "MM", "ED", "AP", "GGC", "AM"]
     pagati = 0
     for s in soci:
         if st.checkbox(f"Pagato da {s}", key=f"paga_{s}"):
             pagati += 1
-    
-    if pagati < 6:
-        st.markdown(f'<div class="status-red">🔴 CASSA: {pagati}/6</div>', unsafe_allow_html=True)
-    else:
-        st.markdown('<div class="status-green">✅ CASSA COMPLETA</div>', unsafe_allow_html=True)
+    st.progress(pagati / 6)
 
 # --- CONTENUTO PRINCIPALE ---
 st.title("🍀 Regalati un Sogno")
 
 if scelta == "🔍 Verifica Vincita":
-    st.subheader("📋 Incolla e Verifica")
+    st.subheader("📋 Verifica Estrazione")
     
+    # PASSO 1: Pulsante AMS
+    st.markdown('<a href="https://www.adm.gov.it/portale/giochi/lotto-e-lotterie/superenalotto" target="_blank" class="ams-button">➡️ PASSO 1: Controlla Estrazione su Sito AMS</a>', unsafe_allow_html=True)
+
+    # PASSO 2: Inserimento
     def distribuisci_numeri():
         if st.session_state.incolla_qui:
             numeri = re.findall(r'\d+', st.session_state.incolla_qui)
             if len(numeri) >= 6:
                 for i in range(6): st.session_state[f"n{i}"] = int(numeri[i])
 
-    st.text_input("Sequenza (spazio o trattino):", key="incolla_qui", on_change=distribuisci_numeri, placeholder="Incolla e premi INVIO")
+    st.text_input("PASSO 2: Incolla sequenza (spazio o trattino):", key="incolla_qui", on_change=distribuisci_numeri, placeholder="Es: 3 10 17 40 85 86")
     
-    with st.expander("👁️ Numeri rilevati", expanded=True):
+    # Expander CHIUSO di default come richiesto
+    with st.expander("👁️ Numeri rilevati (Clicca per modificare)", expanded=False):
         c1, c2, c3 = st.columns(3); c4, c5, c6 = st.columns(3)
         n0 = c1.number_input("1°", 1, 90, key="n0")
         n1 = c2.number_input("2°", 1, 90, key="n1")
@@ -132,14 +123,7 @@ elif scelta == "📅 Stato Abbonamento":
     st.subheader("📅 Abbonamento (15 Concorsi)")
     fatti = st.slider("Concorsi già passati", 0, 15, value=0)
     rimanenti = 15 - fatti
-    
-    if fatti == 0:
-        st.info("🚀 L'abbonamento parte dal concorso di domani 22 Gennaio!")
-    
-    if rimanenti <= 3:
-        st.markdown(f'<div class="status-red">⚠️ CONCORSI RIMANENTI: {rimanenti} / 15</div>', unsafe_allow_html=True)
-    else:
-        st.markdown(f'<div class="status-green">📅 CONCORSI RIMANENTI: {rimanenti} / 15</div>', unsafe_allow_html=True)
+    st.info(f"Rimanenti: {rimanenti} su 15")
     st.progress(fatti / 15)
     
     st.divider()
@@ -148,7 +132,7 @@ elif scelta == "📅 Stato Abbonamento":
         st.text(f"Schedina {i}: {s}")
 
 elif scelta == "💰 Calcolo Quote":
-    st.subheader("💰 Calcolo Netto e Archiviazione")
+    st.subheader("💰 Calcolo Netto")
     premio_lordo = st.number_input("Importo vinto lordo (€)", min_value=0.0, step=10.0)
     if premio_lordo > 0:
         netto_tot = premio_lordo - ((premio_lordo - 500) * 0.20 if premio_lordo > 500 else 0)
@@ -156,7 +140,7 @@ elif scelta == "💰 Calcolo Quote":
         st.markdown(f'<div class="quota-box"><span class="quota-valore">{quota} € a testa</span></div>', unsafe_allow_html=True)
         if st.button("💾 Salva nel Bottino"):
             salva_vincita("Vincita", netto_tot)
-            st.toast("Vincita salvata nell'archivio!", icon="✅")
+            st.toast("Vincita salvata!", icon="✅")
 
 elif scelta == "🏛️ Il Bottino":
     st.subheader("🏛️ Il Bottino Storico")
@@ -165,9 +149,5 @@ elif scelta == "🏛️ Il Bottino":
         st.dataframe(df_storico, use_container_width=True)
         totale_vinto = df_storico['Euro_Netto'].sum()
         st.metric("Totale Netto Accumulato", f"{totale_vinto:,.2f} €".replace(",", "."))
-        if st.button("Svuota Archivio (⚠️ Azione Irreversibile)"):
-            if os.path.exists("archivio_vincite.csv"):
-                os.remove("archivio_vincite.csv")
-                st.rerun()
     else:
-        st.info("L'archivio è ancora vuoto. Inizia a vincere!")
+        st.info("L'archivio è ancora vuoto.")
