@@ -4,6 +4,8 @@ import pandas as pd
 from datetime import datetime
 import os
 import urllib.parse
+# Importiamo la funzione per la pioggia
+from streamlit_extras.let_it_rain import rain 
 
 # 1. IMPOSTAZIONI PAGINA
 st.set_page_config(page_title="Regalati un Sogno", page_icon="🍀", layout="centered")
@@ -80,7 +82,10 @@ if scelta == "🔍 Verifica Vincita":
             if len(numeri) >= 6:
                 for i in range(6): st.session_state[f"n{i}"] = int(numeri[i])
 
-    st.text_input("PASSO 2: Incolla sequenza e premi INVIO:", key="incolla_qui", on_change=distribuisci_numeri)
+    st.text_input("PASSO 2: Incolla qui la sequenza (usa gli spazi):", 
+                  key="incolla_qui", 
+                  on_change=distribuisci_numeri,
+                  placeholder="Es: 3 10 17 40 85 86")
     
     with st.expander("👁️ Numeri rilevati (Modifica se necessario)", expanded=False):
         cols = st.columns(6)
@@ -95,8 +100,15 @@ if scelta == "🔍 Verifica Vincita":
             if len(indovinati) >= 2: vincite.append((i, len(indovinati), indovinati))
         
         if vincite:
-            st.balloons()
+            # EFFETTO PIOGGIA DI SOLDI
+            rain(
+                emoji="💶",
+                font_size=54,
+                falling_speed=5,
+                animation_length="3",
+            )
             play_audio("https://www.myinstants.com/media/sounds/ta-da.mp3")
+            
             testo_wa = "🥳 *VINCITA SUPERENALOTTO!*\n\n"
             for v in vincite:
                 st.success(f"🔥 **SCHEDINA {v[0]}:** {v[1]} PUNTI! ({v[2]})")
@@ -110,11 +122,9 @@ if scelta == "🔍 Verifica Vincita":
 elif scelta == "📅 Stato Abbonamento":
     st.subheader("📅 Gestione Abbonamento (15 Concorsi)")
     
-    # Slider dinamico
     fatti = st.slider("Concorsi già giocati", 0, 15, value=0)
     rimanenti = 15 - fatti
     
-    # Interfaccia dinamica in base ai rimanenti
     if rimanenti > 5:
         st.info(f"✅ Concorsi rimanenti: {rimanenti} su 15")
     elif 1 <= rimanenti <= 5:
@@ -140,6 +150,24 @@ elif scelta == "📅 Stato Abbonamento":
         st.markdown('<div class="status-green">✅ CASSA COMPLETA! RINNOVO PRONTO</div>', unsafe_allow_html=True)
 
 elif scelta == "💰 Calcolo Quote":
+    st.subheader("💰 Calcolo Netto")
+    premio = st.number_input("Lordo (€)", min_value=0.0, step=10.0)
+    if premio > 0:
+        netto = premio - ((premio - 500) * 0.20 if premio > 500 else 0)
+        st.markdown(f'<div class="quota-box"><span class="quota-valore">{round(netto/6, 2)} € a testa</span></div>', unsafe_allow_html=True)
+        if st.button("💾 Salva nel Bottino"):
+            salva_vincita("Vincita", netto)
+            st.toast("Salvato!")
+
+elif scelta == "🏛️ Il Bottino":
+    st.subheader("🏛️ Archivio Storico")
+    df = carica_archivio()
+    if not df.empty:
+        st.dataframe(df, use_container_width=True)
+        totale = df['Euro_Netto'].sum()
+        st.metric("Totale Netto Accumulato", f"{totale:,.2f} €".replace(",", "X").replace(".", ",").replace("X", "."))
+    else:
+        st.info("Archivio vuoto.")
     st.subheader("💰 Calcolo Netto")
     premio = st.number_input("Lordo (€)", min_value=0.0, step=10.0)
     if premio > 0:
