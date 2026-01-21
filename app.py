@@ -1,4 +1,5 @@
 import streamlit as st
+import re
 
 # 1. Impostazioni Pagina
 st.set_page_config(page_title="Regalati un Sogno", page_icon="🍀", layout="centered")
@@ -17,44 +18,44 @@ st.title("🍀 Regalati un Sogno")
 tab1, tab2, tab3 = st.tabs(["🔍 Verifica", "📜 Schedine", "📊 Archivio e Quote"])
 
 with tab1:
-    st.subheader("Inserimento Rapido")
+    st.subheader("Inserimento Numeri")
     
-    # CAMPO COPIA E INCOLLA
-    incollati = st.text_input("Incolla qui i numeri (separati da spazio o trattino):", placeholder="es: 10 20 30 40 50 60")
+    # CAMPO COPIA E INCOLLA (Sempre visibile)
+    incollati = st.text_input("Incolla qui l'estrazione:", placeholder="es: 10 20 30 40 50 60")
     
-    # Logica per estrarre i numeri dal testo incollato
+    # Logica per estrarre i numeri
     lista_numeri = []
     if incollati:
-        import re
-        # Trova tutti i numeri nel testo, ignorando trattini, punti o spazi
         lista_numeri = re.findall(r'\d+', incollati)
         if len(lista_numeri) >= 6:
-            st.success(f"Numeri rilevati: {', '.join(lista_numeri[:6])}")
+            st.success(f"✅ Rilevati: {', '.join(lista_numeri[:6])}")
         else:
-            st.warning(f"Ho trovato solo {len(lista_numeri)} numeri. Ne servono 6.")
+            st.warning(f"Trovati solo {len(lista_numeri)} numeri.")
 
-    st.divider()
-    st.subheader("Verifica Finale")
-    
-    # Griglia numeri (si popolano da soli se incolli sopra)
-    c1, c2, c3 = st.columns(3)
-    val1 = int(lista_numeri[0]) if len(lista_numeri) >= 1 else None
-    val2 = int(lista_numeri[1]) if len(lista_numeri) >= 2 else None
-    val3 = int(lista_numeri[2]) if len(lista_numeri) >= 3 else None
-    
-    n1 = c1.number_input("1°", 1, 90, value=val1, key="v1")
-    n2 = c2.number_input("2°", 1, 90, value=val2, key="v2")
-    n3 = c3.number_input("3°", 1, 90, value=val3, key="v3")
-    
-    c4, c5, c6 = st.columns(3)
-    val4 = int(lista_numeri[3]) if len(lista_numeri) >= 4 else None
-    val5 = int(lista_numeri[4]) if len(lista_numeri) >= 5 else None
-    val6 = int(lista_numeri[5]) if len(lista_numeri) >= 6 else None
-    
-    n4 = c4.number_input("4°", 1, 90, value=val4, key="v4")
-    n5 = c5.number_input("5°", 1, 90, value=val5, key="v5")
-    n6 = c6.number_input("6°", 1, 90, value=val6, key="v6")
+    # CASELLE MANUALI (Nascoste dentro un menu espandibile)
+    with st.expander("Modifica o inserisci a mano"):
+        st.write("Puoi correggere i numeri qui sotto:")
+        c1, c2, c3 = st.columns(3)
+        val1 = int(lista_numeri[0]) if len(lista_numeri) >= 1 else None
+        val2 = int(lista_numeri[1]) if len(lista_numeri) >= 2 else None
+        val3 = int(lista_numeri[2]) if len(lista_numeri) >= 3 else None
+        
+        n1 = c1.number_input("1°", 1, 90, value=val1, key="v1")
+        n2 = c2.number_input("2°", 1, 90, value=val2, key="v2")
+        n3 = c3.number_input("3°", 1, 90, value=val3, key="v3")
+        
+        c4, c5, c6 = st.columns(3)
+        val4 = int(lista_numeri[3]) if len(lista_numeri) >= 4 else None
+        val5 = int(lista_numeri[4]) if len(lista_numeri) >= 5 else None
+        val6 = int(lista_numeri[5]) if len(lista_numeri) >= 6 else None
+        
+        n4 = c4.number_input("4°", 1, 90, value=val4, key="v4")
+        n5 = c5.number_input("5°", 1, 90, value=val5, key="v5")
+        n6 = c6.number_input("6°", 1, 90, value=val6, key="v6")
 
+    st.markdown("---")
+
+    # BOTTONE VERIFICA
     if st.button("VERIFICA ORA 🚀", use_container_width=True):
         if n1 and n2 and n3 and n4 and n5 and n6:
             estratti = {n1, n2, n3, n4, n5, n6}
@@ -75,7 +76,7 @@ with tab1:
             if not vincite_trovate:
                 st.warning("Nessuna vincita per questa estrazione.")
         else:
-            st.error("Inserisci tutti i 6 numeri.")
+            st.error("Inserisci tutti i 6 numeri (usa il campo incolla o il menu manuale).")
 
 with tab2:
     st.subheader("Il nostro sistema")
