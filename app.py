@@ -36,13 +36,15 @@ st.markdown("""
 
 st.title("🍀 Regalati un Sogno")
 
-# --- FUNZIONE PER NUMERI IN LETTERE ---
+# --- FUNZIONE POTENZIATA PER NUMERI IN LETTERE (Gestisce Milioni) ---
 def numero_in_lettere(n):
+    if n == 0: return "zero"
+    
     units = ["", "uno", "due", "tre", "quattro", "cinque", "sei", "sette", "otto", "nove"]
     teens = ["dieci", "undici", "dodici", "tredici", "quattordici", "quindici", "sedici", "diciassette", "diciotto", "diciannove"]
     tens = ["", "", "venti", "trenta", "quaranta", "cinquanta", "sessanta", "settanta", "ottanta", "novanta"]
-    
-    def convert_chunk(num):
+
+    def convert_999(num):
         res = ""
         h = num // 100
         t = (num % 100) // 10
@@ -59,18 +61,24 @@ def numero_in_lettere(n):
                 res += units[u]
         return res
 
-    n = int(n)
-    if n == 0: return "zero"
-    if n < 1000:
-        return convert_chunk(n)
-    if n < 1000000:
-        m = n // 1000
-        r = n % 1000
-        prefix = "mille" if m == 1 else convert_chunk(m) + "mila"
-        return prefix + convert_chunk(r)
-    return "cifra oltre un milione"
+    def convert_recursive(num):
+        if num < 1000:
+            return convert_999(num)
+        if num < 1000000:
+            m = num // 1000
+            r = num % 1000
+            prefix = "mille" if m == 1 else convert_999(m) + "mila"
+            return prefix + convert_999(r)
+        if num < 1000000000:
+            m = num // 1000000
+            r = num % 1000000
+            prefix = "unmilione" if m == 1 else convert_999(m) + "milioni"
+            return prefix + convert_recursive(r)
+        return "cifra enorme"
 
-# --- FUNZIONE LOGICA DI SMISTAMENTO ---
+    return convert_recursive(int(n))
+
+# --- LOGICA SMISTAMENTO ---
 def distribuisci_numeri():
     if st.session_state.incolla_qui:
         numeri = re.findall(r'\d+', st.session_state.incolla_qui)
@@ -116,22 +124,25 @@ with tab2:
 
 with tab3:
     st.subheader("💰 Divisione Premio")
-    st.write("Inserisci il totale vinto per calcolare le quote:")
+    st.write("Inserisci il totale vinto (usa il punto per i decimali):")
     
-    # MODIFICA: Aggiunto format="%0.2f" che permette la visualizzazione corretta
-    # Nota: Streamlit usa lo standard americano per l'input, ma noi formattiamo in IT nel box sotto
-    premio = st.number_input("Totale vinto (€)", min_value=0.0, step=100.0)
+    # Input numerico
+    premio = st.number_input("Totale vinto (€)", min_value=0.0, step=10.0)
     
     if premio > 0:
-        quota = premio / 6
+        # Arrotondamento matematico preciso a 2 decimali
+        quota = round(premio / 6, 2)
         
-        # Formattazione per il box verde (Punto per migliaia, virgola per decimali)
+        # Formattazione visiva
         def format_it(valore):
             return f"{valore:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
 
         quota_f = format_it(quota)
         centesimi = int(round((quota - int(quota)) * 100))
-        lettere = f"{numero_in_lettere(int(quota))}/{centesimi:02d}"
+        
+        # Testo in lettere (ora gestisce anche i milioni)
+        testo_intero = numero_in_lettere(int(quota))
+        lettere = f"{testo_intero}/{centesimi:02d}"
         
         st.markdown(f"""
         <div class="quota-box">
