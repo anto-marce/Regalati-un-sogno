@@ -3,6 +3,7 @@ import re
 import pandas as pd
 from datetime import datetime
 import os
+import urllib.parse
 
 # 1. IMPOSTAZIONI PAGINA
 st.set_page_config(page_title="Regalati un Sogno", page_icon="🍀", layout="centered")
@@ -26,7 +27,11 @@ st.markdown("""
         text-decoration: none; border-radius: 8px; font-weight: bold; margin-bottom: 20px; 
         text-align: center; width: 100%; border: 1px solid #002244;
     }
-    .ams-button:hover { background-color: #004488; }
+    .wa-button {
+        display: inline-block; padding: 12px 20px; background-color: #25D366; color: white !important;
+        text-decoration: none; border-radius: 8px; font-weight: bold; margin-top: 10px; 
+        text-align: center; width: 100%;
+    }
     </style>
     """, unsafe_allow_html=True)
 
@@ -35,13 +40,9 @@ def play_audio(url):
     audio_html = f'<audio autoplay="true" style="display:none;"><source src="{url}" type="audio/mpeg"></audio>'
     st.components.v1.html(audio_html, height=0)
 
-# --- FUNZIONE ARCHIVIO ---
+# --- FUNZIONI ARCHIVIO ---
 def salva_vincita(punti, importo_netto):
-    nuovo_dato = {
-        'Data': datetime.now().strftime("%d/%m/%Y %H:%M"),
-        'Punti': punti,
-        'Euro_Netto': importo_netto
-    }
+    nuovo_dato = {'Data': datetime.now().strftime("%d/%m/%Y %H:%M"), 'Punti': punti, 'Euro_Netto': importo_netto}
     try:
         df = pd.read_csv('archivio_vincite.csv')
         df = pd.concat([df, pd.DataFrame([nuovo_dato])], ignore_index=True)
@@ -50,26 +51,17 @@ def salva_vincita(punti, importo_netto):
     df.to_csv('archivio_vincite.csv', index=False)
 
 def carica_archivio():
-    try:
-        return pd.read_csv('archivio_vincite.csv')
-    except FileNotFoundError:
-        return pd.DataFrame(columns=['Data', 'Punti', 'Euro_Netto'])
+    try: return pd.read_csv('archivio_vincite.csv')
+    except FileNotFoundError: return pd.DataFrame(columns=['Data', 'Punti', 'Euro_Netto'])
 
-# --- SIDEBAR (MENU NAVIGAZIONE) ---
+# --- SIDEBAR ---
 with st.sidebar:
     st.title("🍀 Menù")
-    scelta = st.radio(
-        "Seleziona sezione:",
-        ["🔍 Verifica Vincita", "📅 Stato Abbonamento", "💰 Calcolo Quote", "🏛️ Il Bottino"],
-        index=0
-    )
+    scelta = st.radio("Seleziona sezione:", ["🔍 Verifica Vincita", "📅 Stato Abbonamento", "💰 Calcolo Quote", "🏛️ Il Bottino"], index=0)
     st.divider()
     st.subheader("👥 Cassa Soci")
     soci = ["VS", "MM", "ED", "AP", "GGC", "AM"]
-    pagati = 0
-    for s in soci:
-        if st.checkbox(f"Pagato da {s}", key=f"paga_{s}"):
-            pagati += 1
+    pagati = sum([st.checkbox(f"Pagato da {s}", key=f"paga_{s}") for s in soci])
     st.progress(pagati / 6)
     if pagati == 6: st.success("Cassa Completa!")
 
@@ -79,32 +71,28 @@ st.title("🍀 Regalati un Sogno")
 if scelta == "🔍 Verifica Vincita":
     st.subheader("📋 Verifica Estrazione")
     
-    # PASSO 1: Pulsante AMS con link aggiornato
+    # PASSO 1: AMS
     st.markdown('<a href="https://www.adm.gov.it/portale/monopoli/giochi/giochi_num_total/superenalotto" target="_blank" class="ams-button">➡️ PASSO 1: Controlla Estrazione su Sito AMS</a>', unsafe_allow_html=True)
 
     # PASSO 2: Inserimento
+    if 'n0' not in st.session_state:
+        for i in range(6): st.session_state[f'n{i}'] = 1
+
     def distribuisci_numeri():
         if st.session_state.incolla_qui:
             numeri = re.findall(r'\d+', st.session_state.incolla_qui)
             if len(numeri) >= 6:
                 for i in range(6): st.session_state[f"n{i}"] = int(numeri[i])
 
-    st.text_input("PASSO 2: Incolla sequenza (spazio o trattino):", key="incolla_qui", on_change=distribuisci_numeri, placeholder="Esempio: 5 12 24 38 70 81")
+    st.text_input("PASSO 2: Incolla sequenza e premi INVIO:", key="incolla_qui", on_change=distribuisci_numeri, placeholder="Es: 5 12 24 38 70 81")
     
-    # Expander chiuso di default per i numeri rilevati
-    with st.expander("👁️ Numeri rilevati (Clicca per modificare)", expanded=False):
-        c1, c2, c3 = st.columns(3); c4, c5, c6 = st.columns(3)
-        n0 = c1.number_input("1°", 1, 90, key="n0")
-        n1 = c2.number_input("2°", 1, 90, key="n1")
-        n2 = c3.number_input("3°", 1, 90, key="n2")
-        n3 = c4.number_input("4°", 1, 90, key="n3")
-        n4 = c5.number_input("5°", 1, 90, key="n4")
-        n5 = c6.number_input("6°", 1, 90, key="n5")
+    with st.expander("👁️ Numeri rilevati (Modifica se necessario)", expanded=False):
+        cols = st.columns(6)
+        final_nums = [cols[i].number_input(f"{i+1}°", 1, 90, key=f"n{i}") for i in range(6)]
 
     if st.button("VERIFICA ORA 🚀", type="primary", use_container_width=True):
-        final_nums = [n0, n1, n2, n3, n4, n5]
         set_estratti = set(final_nums)
-        SCHEDINE = [{3, 10, 17, 40, 85, 86}, {10, 17, 19, 40, 85, 86}, {17, 19, 40, 75, 85, 86}, {3, 19, 40, 75, 85, 86}, {3, 10, 19, 75, 85, 86}, {3, 10, 17, 75, 85, 86}]
+        SCHEDINE = [{3,10,17,40,85,86}, {10,17,19,40,85,86}, {17,19,40,75,85,86}, {3,19,40,75,85,86}, {3,10,19,75,85,86}, {3,10,17,75,85,86}]
         vincite = []
         for i, sch in enumerate(SCHEDINE, 1):
             indovinati = sorted(list(sch.intersection(set_estratti)))
@@ -113,44 +101,39 @@ if scelta == "🔍 Verifica Vincita":
         if vincite:
             st.balloons()
             play_audio("https://www.myinstants.com/media/sounds/ta-da.mp3")
-            msg_wa = "🥳 *VINCITA SUPERENALOTTO!*%0A"
+            
+            testo_wa = "🥳 *VINCITA SUPERENALOTTO!*\n\n"
             for v in vincite:
                 st.success(f"🔥 **SCHEDINA {v[0]}:** {v[1]} PUNTI! ({v[2]})")
-                msg_wa += f"• Schedina {v[0]}: {v[1]} Punti ({v[2]})%0A"
-            st.markdown(f'''<a href="https://wa.me/?text={msg_wa}" target="_blank"><button style="width:100%; background-color:#25D366; color:white; border:none; padding:10px; border-radius:5px; cursor:pointer; font-weight:bold;">📲 Avvisa il gruppo su WhatsApp</button></a>''', unsafe_allow_html=True)
+                testo_wa += f"✅ Schedina {v[0]}: *{v[1]} Punti* ({', '.join(map(str, v[2]))})\n"
+            
+            # LINK API WHATSAPP (I dati vengono codificati solo per il browser locale)
+            testo_encoded = urllib.parse.quote(testo_wa)
+            st.markdown(f'<a href="https://wa.me/?text={testo_encoded}" target="_blank" class="wa-button">📲 PASSO 3: Invia Esito su WhatsApp</a>', unsafe_allow_html=True)
         else:
             play_audio("https://www.myinstants.com/media/sounds/sad-trombone.mp3")
-            st.warning("Nessuna vincita. Ritenta!")
+            st.warning("Nessuna vincita rilevata.")
 
 elif scelta == "📅 Stato Abbonamento":
-    st.subheader("📅 Gestione Abbonamento (15 Concorsi)")
-    fatti = st.slider("Concorsi già passati", 0, 15, value=0)
-    rimanenti = 15 - fatti
-    st.info(f"Concorsi rimanenti: {rimanenti} su 15")
+    st.subheader("📅 Abbonamento")
+    fatti = st.slider("Concorsi passati", 0, 15, value=0)
+    st.info(f"Concorsi rimanenti: {15 - fatti} su 15")
     st.progress(fatti / 15)
-    
-    st.divider()
-    st.write("**Le nostre sestine:**")
-    for i, s in enumerate(["03-10-17-40-85-86", "10-17-19-40-85-86", "17-19-40-75-85-86", "03-19-40-75-85-86", "03-10-19-75-85-86", "03-10-17-75-85-86"], 1):
-        st.text(f"Schedina {i}: {s}")
 
 elif scelta == "💰 Calcolo Quote":
-    st.subheader("💰 Calcolo Netto Vincita")
-    premio_lordo = st.number_input("Importo vinto lordo (€)", min_value=0.0, step=10.0)
-    if premio_lordo > 0:
-        netto_tot = premio_lordo - ((premio_lordo - 500) * 0.20 if premio_lordo > 500 else 0)
-        quota = round(netto_tot / 6, 2)
-        st.markdown(f'<div class="quota-box"><span class="quota-valore">{quota} € a testa</span></div>', unsafe_allow_html=True)
+    st.subheader("💰 Calcolo Netto")
+    premio = st.number_input("Lordo (€)", min_value=0.0, step=10.0)
+    if premio > 0:
+        netto = premio - ((premio - 500) * 0.20 if premio > 500 else 0)
+        st.markdown(f'<div class="quota-box"><span class="quota-valore">{round(netto/6, 2)} € a testa</span></div>', unsafe_allow_html=True)
         if st.button("💾 Salva nel Bottino"):
-            salva_vincita("Vincita", netto_tot)
-            st.toast("Vincita registrata correttamente!", icon="✅")
+            salva_vincita("Vincita", netto)
+            st.toast("Salvato!")
 
 elif scelta == "🏛️ Il Bottino":
     st.subheader("🏛️ Archivio Storico")
-    df_storico = carica_archivio()
-    if not df_storico.empty:
-        st.dataframe(df_storico, use_container_width=True)
-        totale_vinto = df_storico['Euro_Netto'].sum()
-        st.metric("Totale Netto Accumulato", f"{totale_vinto:,.2f} €".replace(",", "."))
-    else:
-        st.info("L'archivio è vuoto. Buona fortuna per domani!")
+    df = carica_archivio()
+    if not df.empty:
+        st.dataframe(df, use_container_width=True)
+        st.metric("Totale Netto", f"{df['Euro_Netto'].sum():,.2f} €".replace(",", "."))
+    else: st.info("Archivio vuoto.")
