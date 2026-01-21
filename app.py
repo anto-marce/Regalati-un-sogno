@@ -1,41 +1,59 @@
 import streamlit as st
 
 # 1. Impostazioni Pagina
-st.set_page_config(
-    page_title="Regalati un Sogno",
-    page_icon="🍀",
-    layout="centered"
-)
+st.set_page_config(page_title="Regalati un Sogno", page_icon="🍀", layout="centered")
 
 # 2. Stile CSS
 st.markdown("""
     <style>
-    .stNumberInput input {
-        font-size: 20px !important;
-        text-align: center !important;
-    }
-    .main {
-        background-color: #f5f7f9;
-    }
+    .stNumberInput input { font-size: 20px !important; text-align: center !important; }
+    .main { background-color: #f5f7f9; }
     </style>
     """, unsafe_allow_html=True)
 
 st.title("🍀 Regalati un Sogno")
 
-# 3. Creazione di 3 Schede
+# 3. Schede
 tab1, tab2, tab3 = st.tabs(["🔍 Verifica", "📜 Schedine", "📊 Archivio e Quote"])
 
 with tab1:
-    st.subheader("Inserisci i numeri estratti")
+    st.subheader("Inserimento Rapido")
+    
+    # CAMPO COPIA E INCOLLA
+    incollati = st.text_input("Incolla qui i numeri (separati da spazio o trattino):", placeholder="es: 10 20 30 40 50 60")
+    
+    # Logica per estrarre i numeri dal testo incollato
+    lista_numeri = []
+    if incollati:
+        import re
+        # Trova tutti i numeri nel testo, ignorando trattini, punti o spazi
+        lista_numeri = re.findall(r'\d+', incollati)
+        if len(lista_numeri) >= 6:
+            st.success(f"Numeri rilevati: {', '.join(lista_numeri[:6])}")
+        else:
+            st.warning(f"Ho trovato solo {len(lista_numeri)} numeri. Ne servono 6.")
+
+    st.divider()
+    st.subheader("Verifica Finale")
+    
+    # Griglia numeri (si popolano da soli se incolli sopra)
     c1, c2, c3 = st.columns(3)
-    n1 = c1.number_input("1°", 1, 90, value=None, placeholder="?", key="v1")
-    n2 = c2.number_input("2°", 1, 90, value=None, placeholder="?", key="v2")
-    n3 = c3.number_input("3°", 1, 90, value=None, placeholder="?", key="v3")
+    val1 = int(lista_numeri[0]) if len(lista_numeri) >= 1 else None
+    val2 = int(lista_numeri[1]) if len(lista_numeri) >= 2 else None
+    val3 = int(lista_numeri[2]) if len(lista_numeri) >= 3 else None
+    
+    n1 = c1.number_input("1°", 1, 90, value=val1, key="v1")
+    n2 = c2.number_input("2°", 1, 90, value=val2, key="v2")
+    n3 = c3.number_input("3°", 1, 90, value=val3, key="v3")
     
     c4, c5, c6 = st.columns(3)
-    n4 = c4.number_input("4°", 1, 90, value=None, placeholder="?", key="v4")
-    n5 = c5.number_input("5°", 1, 90, value=None, placeholder="?", key="v5")
-    n6 = c6.number_input("6°", 1, 90, value=None, placeholder="?", key="v6")
+    val4 = int(lista_numeri[3]) if len(lista_numeri) >= 4 else None
+    val5 = int(lista_numeri[4]) if len(lista_numeri) >= 5 else None
+    val6 = int(lista_numeri[5]) if len(lista_numeri) >= 6 else None
+    
+    n4 = c4.number_input("4°", 1, 90, value=val4, key="v4")
+    n5 = c5.number_input("5°", 1, 90, value=val5, key="v5")
+    n6 = c6.number_input("6°", 1, 90, value=val6, key="v6")
 
     if st.button("VERIFICA ORA 🚀", use_container_width=True):
         if n1 and n2 and n3 and n4 and n5 and n6:
@@ -71,15 +89,10 @@ with tab2:
 
 with tab3:
     st.subheader("📊 Risultati e Divisione")
-    
-    # Link all'archivio storico completo
-    st.link_button("📜 Archivio Storico Estrazioni", "https://www.superenalotto.it/archivio-estrazioni", use_container_width=True)
-    
+    st.link_button("📜 Apri Archivio Storico Ufficiale", "https://www.superenalotto.it/archivio-estrazioni", use_container_width=True)
     st.divider()
-    
-    # Calcolatore di Quote
     st.write("💰 **Calcolatore Divisione Vincita**")
-    premio = st.number_input("Inserisci l'importo vinto (€)", min_value=0.0, step=0.50)
+    premio = st.number_input("Importo totale vinto (€)", min_value=0.0, step=0.50, value=0.0)
     if premio > 0:
         quota = premio / 6
-        st.info(f"Ogni partecipante riceve: **{quota:.2f} €**")
+        st.success(f"💎 Quota per ogni socio: **{quota:.2f} €**")
