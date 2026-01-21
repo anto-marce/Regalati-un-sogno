@@ -4,7 +4,7 @@ import re
 # 1. Impostazioni Pagina
 st.set_page_config(page_title="Regalati un Sogno", page_icon="🍀", layout="centered")
 
-# 2. Stile CSS per rendere i numeri grandi e centrati
+# 2. Stile CSS
 st.markdown("""
     <style>
     .stNumberInput input { font-size: 22px !important; text-align: center !important; font-weight: bold; }
@@ -18,33 +18,37 @@ st.title("🍀 Regalati un Sogno")
 # --- FUNZIONE LOGICA DI SMISTAMENTO ---
 def distribuisci_numeri():
     if st.session_state.incolla_qui:
-        # Estrae tutti i numeri dal testo (anche se separati da spazi, punti o trattini)
         numeri = re.findall(r'\d+', st.session_state.incolla_qui)
         if len(numeri) >= 6:
             for i in range(6):
                 st.session_state[f"n{i}"] = int(numeri[i])
 
 # 3. Creazione Schede
-tab1, tab2, tab3 = st.tabs(["🔍 Verifica Vincita", "📜 Il Nostro Sistema", "🏛️ Info e Quote"])
+tab1, tab2, tab3 = st.tabs(["🔍 Verifica Vincita", "📜 Il Nostro Sistema", "💰 Calcolo Quote"])
 
 with tab1:
-    st.subheader("1. Incolla i numeri estratti")
+    # --- LINK DIRETTO ADM ---
+    st.info("🎯 **Passaggio 1:** Prendi i numeri dal sito ufficiale")
+    st.link_button("Apri Sito Ufficiale ADM 🏛️", 
+                   "https://www.adm.gov.it/portale/monopoli/giochi/giochi_num_total/superenalotto", 
+                   use_container_width=True)
+    
+    st.write("---")
+    
+    # --- INCOLLA ---
+    st.subheader("2. Incolla i numeri estratti")
     st.text_input(
-        "Incolla qui la stringa dei numeri e premi INVIO:", 
+        "Incolla qui la stringa e premi INVIO:", 
         placeholder="Esempio: 3 15 22 48 60 81",
         key="incolla_qui",
         on_change=distribuisci_numeri
     )
     
-    st.write("---")
-    
-    st.subheader("2. Controlla e Verifica")
-    # Expander aperto di default per vedere i numeri caricati
-    with st.expander("Numeri in gioco", expanded=True):
+    # --- VERIFICA ---
+    with st.expander("Numeri rilevati (modifica se necessario)", expanded=True):
         c1, c2, c3 = st.columns(3)
         c4, c5, c6 = st.columns(3)
         
-        # Le chiavi n0...n5 sono collegate alla funzione sopra
         n0 = c1.number_input("1°", 1, 90, key="n0")
         n1 = c2.number_input("2°", 1, 90, key="n1")
         n2 = c3.number_input("3°", 1, 90, key="n2")
@@ -55,7 +59,6 @@ with tab1:
     final_nums = [n0, n1, n2, n3, n4, n5]
 
     if st.button("CONTROLLA SCHEDINE 🚀", use_container_width=True):
-        # Verifica che i numeri siano validi (non tutti a 1 o 0)
         if all(final_nums):
             set_estratti = set(final_nums)
             SCHEDINE = [
@@ -75,13 +78,12 @@ with tab1:
                     vincite_trovate = True
             
             if not vincite_trovate:
-                st.info("Nessuna vincita (minimo 2 punti). Ritenta!")
+                st.info("Nessuna vincita (minimo 2 punti).")
         else:
-            st.error("Inserisci tutti i 6 numeri dell'estrazione.")
+            st.error("Inserisci tutti i 6 numeri.")
 
 with tab2:
     st.subheader("Le Sestine del Gruppo")
-    st.write("Queste sono le 6 combinazioni che giochiamo:")
     sestine = [
         "03 - 10 - 17 - 40 - 85 - 86", "10 - 17 - 19 - 40 - 85 - 86",
         "17 - 19 - 40 - 75 - 85 - 86", "03 - 19 - 40 - 75 - 85 - 86",
@@ -91,12 +93,8 @@ with tab2:
         st.code(f"Schedina {i}: {s}", language="text")
 
 with tab3:
-    st.subheader("🏛️ Fonti Ufficiali ADM")
-    st.write("Controlla i numeri sul sito dell'Agenzia delle Dogane e dei Monopoli:")
-    st.link_button("Vai al sito ADM 🏛️", "https://www.adm.gov.it/portale/monopoli/giochi/giochi_num_total/superenalotto", use_container_width=True)
-    
-    st.divider()
-    st.write("💰 **Divisione Premio**")
+    st.subheader("💰 Divisione Premio")
+    st.write("Inserisci il totale vinto per calcolare le quote:")
     premio = st.number_input("Totale vinto (€)", min_value=0.0, step=1.0)
     if premio > 0:
         st.success(f"Quota individuale (6 persone): **{(premio / 6):.2f} €**")
