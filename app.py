@@ -4,7 +4,7 @@ import pandas as pd
 from datetime import datetime
 import os
 import urllib.parse
-# Importiamo la funzione per la pioggia
+# Importiamo la funzione per la pioggia (Assicurati di avere streamlit-extras nel requirements.txt)
 from streamlit_extras.let_it_rain import rain 
 
 # 1. IMPOSTAZIONI PAGINA
@@ -73,27 +73,50 @@ if scelta == "🔍 Verifica Vincita":
     st.subheader("📋 Verifica Estrazione")
     st.markdown('<a href="https://www.adm.gov.it/portale/monopoli/giochi/giochi_num_total/superenalotto" target="_blank" class="ams-button">➡️ PASSO 1: Controlla Estrazione su Sito AMS</a>', unsafe_allow_html=True)
 
+    # Inizializza i numeri se non esistono
     if 'n0' not in st.session_state:
         for i in range(6): st.session_state[f'n{i}'] = 1
 
+    # Funzione per pulire e distribuire i numeri
     def distribuisci_numeri():
-        if st.session_state.incolla_qui:
-            numeri = re.findall(r'\d+', st.session_state.incolla_qui)
-            if len(numeri) >= 6:
-                for i in range(6): st.session_state[f"n{i}"] = int(numeri[i])
+        testo = st.session_state.incolla_qui
+        if testo:
+            # Trova tutti i numeri nel testo
+            numeri_grezzi = re.findall(r'\d+', testo)
+            # Filtra: tieni solo numeri tra 1 e 90 (esclude anni e date)
+            numeri_validi = [int(n) for n in numeri_grezzi if 1 <= int(n) <= 90]
+            
+            # Se ne abbiamo trovati almeno 6, li inseriamo
+            if len(numeri_validi) >= 6:
+                for i in range(6): 
+                    st.session_state[f"n{i}"] = numeri_validi[i]
+            else:
+                st.toast(f"⚠️ Trovati solo {len(numeri_validi)} numeri validi (serve sequenza da 6)", icon="⚠️")
 
-    st.text_input("PASSO 2: Incolla qui la sequenza (usa gli spazi):", 
-                  key="incolla_qui", 
-                  on_change=distribuisci_numeri,
-                  placeholder="Es: 3 10 17 40 85 86")
+    # Input testuale migliorato con tasto applica
+    c_input, c_btn = st.columns([4, 1])
+    with c_input:
+        st.text_input("PASSO 2: Incolla qui la sequenza:", 
+                      key="incolla_qui", 
+                      on_change=distribuisci_numeri,
+                      placeholder="Es: 3 10 17 40 85 86")
+    with c_btn:
+        st.write("") # Spaziatura
+        st.write("") 
+        if st.button("⤵️"):
+            distribuisci_numeri()
+            st.rerun()
     
-    with st.expander("👁️ Numeri rilevati (Modifica se necessario)", expanded=False):
-        cols = st.columns(6)
-        final_nums = [cols[i].number_input(f"{i+1}°", 1, 90, key=f"n{i}") for i in range(6)]
+    # Area numeri sempre aperta per controllo visivo
+    st.write("👁️ **Numeri rilevati:**")
+    cols = st.columns(6)
+    final_nums = [cols[i].number_input(f"{i+1}°", 1, 90, key=f"n{i}") for i in range(6)]
 
     if st.button("VERIFICA ORA 🚀", type="primary", use_container_width=True):
         set_estratti = set(final_nums)
+        # LE TUE 6 SCHEDINE
         SCHEDINE = [{3,10,17,40,85,86}, {10,17,19,40,85,86}, {17,19,40,75,85,86}, {3,19,40,75,85,86}, {3,10,19,75,85,86}, {3,10,17,75,85,86}]
+        
         vincite = []
         for i, sch in enumerate(SCHEDINE, 1):
             indovinati = sorted(list(sch.intersection(set_estratti)))
@@ -121,25 +144,6 @@ if scelta == "🔍 Verifica Vincita":
 
 elif scelta == "📅 Stato Abbonamento":
     st.subheader("📅 Gestione Abbonamento (15 Concorsi)")
-    
-    fatti = st.slider("Concorsi già giocati", 0, 15, value=0)
-    rimanenti = 15 - fatti
-    
-    if rimanenti > 5:
-        st.info(f"✅ Concorsi rimanenti: {rimanenti} su 15")
-    elif 1 <= rimanenti <= 5:
-        st.warning(f"⚠️ Attenzione: mancano solo {rimanenti} estrazioni al rinnovo!")
-    else:
-        st.error("🆘 ABBONAMENTO SCADUTO! Raccogliere le quote.")
-    
-    st.progress(fatti / 15)
-    
-    st.divider()
-    st.subheader("👥 Cassa Soci (Prossimo Rinnovo)")
-    soci = ["VS", "MM", "ED", "AP", "GGC", "AM"]
-    c1, c2 = st.columns(2)
-    pagati = 0
-    for i, s in enumerate(soci):
         with c1 if i < 3 else c2:
             if st.checkbox(f"Quota ricevuta da {s}", key=f"paga_{s}"):
                 pagati += 1
