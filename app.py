@@ -7,7 +7,7 @@ import plotly.express as px
 # 1. IMPOSTAZIONI PAGINA
 st.set_page_config(page_title="Regalati un Sogno", page_icon="🍀", layout="centered")
 
-# 2. STILE CSS PERSONALIZZATO
+# 2. STILE CSS
 st.markdown("""
     <style>
     .main { background-color: #f8f9fa; }
@@ -17,14 +17,9 @@ st.markdown("""
         border-radius: 12px; border: 2px solid #c8e6c9; margin-top: 15px;
     }
     .quota-valore { font-size: 34px; font-weight: 800; color: #1b5e20; }
-    
-    /* Box Stato Cassa e Rimanenti */
     .status-red { background-color: #f8d7da; color: #721c24; padding: 15px; border-radius: 10px; border: 1px solid #f5c6cb; text-align: center; font-weight: bold; margin-bottom: 10px; }
     .status-green { background-color: #d4edda; color: #155724; padding: 15px; border-radius: 10px; border: 1px solid #c3e6cb; text-align: center; font-weight: bold; margin-bottom: 10px; }
-    
-    div[data-testid="stNumberInput"] input { 
-        font-size: 20px !important; font-weight: bold !important; color: #000000 !important; background-color: #ffffff !important;
-    }
+    .status-blue { background-color: #cce5ff; color: #004085; padding: 15px; border-radius: 10px; border: 1px solid #b8daff; text-align: center; font-weight: bold; margin-bottom: 10px; }
     </style>
     """, unsafe_allow_html=True)
 
@@ -37,22 +32,23 @@ def carica_archivio():
         df = pd.read_csv('archivio_vincite.csv')
         df['Data'] = pd.to_datetime(df['Data'], dayfirst=True)
         return df
-    except:
-        return pd.DataFrame(columns=['Data', 'Punti', 'Euro_Netto'])
+    except: return pd.DataFrame(columns=['Data', 'Punti', 'Euro_Netto'])
 
 # --- INTERFACCIA ---
 st.title("🍀 Regalati un Sogno")
+st.subheader("Inizio Abbonamento: 22 Gennaio 2026")
+
 tab1, tab2, tab3, tab4 = st.tabs(["🔍 Verifica", "📅 Abbonamento & Cassa", "💰 Calcolo Netto", "🏛️ Dashboard"])
 
 # --- TAB 1: VERIFICA ---
 with tab1:
-    st.subheader("📋 Verifica Estrazione")
+    st.info("🎯 Prossima estrazione: Giovedì 22 Gennaio")
     def distribuisci_numeri():
         if st.session_state.incolla_qui:
             nums = re.findall(r'\d+', st.session_state.incolla_qui)
             if len(nums) >= 6:
                 for i in range(6): st.session_state[f"n{i}"] = int(nums[i])
-    st.text_input("Incolla estratti (spazio o trattino):", key="incolla_qui", on_change=distribuisci_numeri)
+    st.text_input("Incolla estratti:", key="incolla_qui", on_change=distribuisci_numeri)
     
     if st.button("VERIFICA ORA 🚀", type="primary", use_container_width=True):
         estratti = [st.session_state.get(f"n{i}", 1) for i in range(6)]
@@ -71,52 +67,52 @@ with tab1:
 
 # --- TAB 2: CASSA & ABBONAMENTO ---
 with tab2:
-    st.subheader("👥 Gestione Abbonamento")
+    st.subheader("📅 Stato Abbonamento (15 Concorsi)")
+    conc_fatti = st.slider("Concorsi già passati", 0, 15, key="conc_fatti", value=0)
+    rimanenti = 15 - conc_fatti
     
-    # Logica Concorsi Rimanenti
-    concorsi_fatti = st.slider("Quanti concorsi (su 15) sono già passati?", 0, 15, key="concorsi_fatti")
-    rimanenti = 15 - concorsi_fatti
-    
-    # Colori dinamici per i Concorsi Rimanenti
-    if rimanenti <= 3:
-        st.markdown(f'<div class="status-red">⚠️ CONCORSI RIMANENTI: {rimanenti} / 15<br><small>ABBONAMENTO IN SCADENZA - PREPARARE RINNOVO</small></div>', unsafe_allow_html=True)
+    if conc_fatti == 0:
+        st.markdown(f'<div class="status-blue">🚀 PRONTI AL VIA!<br><small>Tutti i 15 concorsi sono ancora disponibili</small></div>', unsafe_allow_html=True)
+    elif rimanenti <= 3:
+        st.markdown(f'<div class="status-red">⚠️ RIMANENTI: {rimanenti} / 15<br><small>Abbonamento quasi terminato!</small></div>', unsafe_allow_html=True)
     else:
-        st.markdown(f'<div class="status-green">📅 CONCORSI RIMANENTI: {rimanenti} / 15<br><small>ABBONAMENTO REGOLARE</small></div>', unsafe_allow_html=True)
+        st.markdown(f'<div class="status-green">📅 RIMANENTI: {rimanenti} / 15<br><small>Abbonamento in corso</small></div>', unsafe_allow_html=True)
     
-    st.progress(concorsi_fatti / 15)
+    st.progress(conc_fatti / 15)
 
     st.divider()
-    st.subheader("💰 Cassa per Rinnovo Prossimo Abbonamento")
-    # Inserimento Nomi Soci Reali
+    st.subheader("💰 Cassa Rinnovo (VS, MM, ED, AP, GGC, AM)")
     soci = ["VS", "MM", "ED", "AP", "GGC", "AM"]
-    
     c1, c2 = st.columns(2)
     for i, s in enumerate(soci):
-        with c1 if i < 3 else c2:
-            st.checkbox(f"Pagato da {s}", key=f"paga_{i}")
+        with c1 if i < 3 else c2: st.checkbox(f"Pagato da {s}", key=f"paga_{i}")
     
     pagati = sum([st.session_state.get(f"paga_{i}", False) for i in range(6)])
-    
-    # Colori dinamici per la Cassa
     if pagati < 6:
-        st.markdown(f'<div class="status-red">🔴 CASSA INCOMPLETA: {pagati} / 6 SOCI HANNO PAGATO<br><small>Mancano le quote di {6-pagati} persone</small></div>', unsafe_allow_html=True)
+        st.markdown(f'<div class="status-red">🔴 CASSA: {pagati}/6 SOCI<br><small>Mancano {6-pagati} quote</small></div>', unsafe_allow_html=True)
     else:
-        st.markdown(f'<div class="status-green">✅ CASSA COMPLETA: 6 / 6 SOCI HANNO PAGATO<br><small>Il gruppo è pronto per il rinnovo!</small></div>', unsafe_allow_html=True)
+        st.markdown(f'<div class="status-green">✅ CASSA COMPLETA!<br><small>Tutto pronto per il prossimo rinnovo</small></div>', unsafe_allow_html=True)
 
-# --- TAB 3: CALCOLO ---
+# --- TAB 3 & 4 (Calcolo e Dashboard rimangono invariati) ---
 with tab3:
     st.subheader("💰 Calcolo Netto")
-    lordo = st.number_input("Vincita Lorda Totale (€)", min_value=0.0)
+    lordo = st.number_input("Vincita Lorda (€)", min_value=0.0)
     if lordo > 0:
         netto = lordo - ((lordo-500)*0.2 if lordo > 500 else 0)
         st.markdown(f'<div class="quota-box"><span class="quota-valore">{round(netto/6, 2):,.2f} €</span><br>Netto a testa</div>', unsafe_allow_html=True)
+        if st.button("💾 Registra nel Bottino"):
+            # Funzione salva_vincita semplificata qui per brevità
+            nuovo = pd.DataFrame([{'Data': datetime.now().strftime("%d/%m/%Y"), 'Punti': 'Vincita', 'Euro_Netto': netto}])
+            try:
+                df = pd.read_csv('archivio_vincite.csv')
+                df = pd.concat([df, nuovo], ignore_index=True)
+            except: df = nuovo
+            df.to_csv('archivio_vincite.csv', index=False)
+            st.toast("Registrato!")
 
-# --- TAB 4: DASHBOARD ---
 with tab4:
     df = carica_archivio()
     if not df.empty:
-        st.metric("Totale Bottino Netto Accumulato", f"{df['Euro_Netto'].sum():,.2f} €")
-        fig = px.bar(df, x='Data', y='Euro_Netto', color='Punti', title="Andamento Storico Vincite")
-        st.plotly_chart(fig, use_container_width=True)
-    else:
-        st.info("L'archivio è vuoto. Registra la prima vincita nella scheda 'Calcolo Netto'!")
+        st.metric("Totale Bottino", f"{df['Euro_Netto'].sum():,.2f} €")
+        st.plotly_chart(px.bar(df, x='Data', y='Euro_Netto', title="Storico"), use_container_width=True)
+    else: st.info("Ancora nessuna vincita.")
