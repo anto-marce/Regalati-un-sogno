@@ -1,13 +1,13 @@
 import streamlit as st
 
-# 1. Impostazioni Pagina (Titolo che appare sul browser)
+# 1. Impostazioni Pagina
 st.set_page_config(
     page_title="Regalati un Sogno",
     page_icon="🍀",
-    layout="centered" # Mantiene tutto al centro, perfetto per il cellulare
+    layout="centered"
 )
 
-# 2. Stile CSS per far somigliare i numeri a dei "pallini" della lotteria
+# 2. Stile CSS per l'estetica
 st.markdown("""
     <style>
     .stNumberInput input {
@@ -23,13 +23,13 @@ st.markdown("""
 st.title("🍀 Regalati un Sogno")
 st.write("Benvenuti nel sistema del gruppo. Buona fortuna!")
 
-# Creazione delle schede per risparmiare spazio su mobile
+# 3. Schede
 tab1, tab2 = st.tabs(["🔍 Verifica Vincita", "📜 Le Nostre Schedine"])
 
 with tab1:
     st.subheader("Inserisci l'estrazione")
     
-    # Griglia 3x2 per i numeri
+    # Griglia per i numeri
     c1, c2, c3 = st.columns(3)
     n1 = c1.number_input("1°", 1, 90, value=None, placeholder="?", key="v1")
     n2 = c2.number_input("2°", 1, 90, value=None, placeholder="?", key="v2")
@@ -40,14 +40,14 @@ with tab1:
     n5 = c5.number_input("5°", 1, 90, value=None, placeholder="?", key="v5")
     n6 = c6.number_input("6°", 1, 90, value=None, placeholder="?", key="v6")
 
-    st.markdown("---") # Linea di separazione
+    st.markdown("---")
 
-   if st.button("VERIFICA ORA 🚀", use_container_width=True):
-        # Controlliamo se tutte le caselle sono state riempite
+    # IL BOTTONE (Fai attenzione che sia allineato al margine sinistro del "with tab1")
+    if st.button("VERIFICA ORA 🚀", use_container_width=True):
+        # Controllo se i numeri sono presenti
         if n1 and n2 and n3 and n4 and n5 and n6:
             estratti = {n1, n2, n3, n4, n5, n6}
             
-            # Le vostre sestine ufficiali (SCHEDINE)
             SCHEDINE = [
                 {3, 10, 17, 40, 85, 86}, {10, 17, 19, 40, 85, 86},
                 {17, 19, 40, 75, 85, 86}, {3, 19, 40, 75, 85, 86},
@@ -68,13 +68,12 @@ with tab1:
             if not vincite_trovate:
                 st.warning("Nessuna vincita per questa estrazione. Ritenta!")
         else:
-            # Messaggio se l'utente dimentica di inserire un numero
             st.error("Per favore, inserisci tutti i 6 numeri prima di verificare.")
+
 with tab2:
     st.subheader("Sistema in gioco")
     st.info("Ogni partecipante ha una rotazione equa dei numeri variabili.")
     
-    # Mostra le schedine in modo elegante
     schedine_lista = [
         "3 - 10 - 17 - 40 - 85 - 86",
         "10 - 17 - 19 - 40 - 85 - 86",
