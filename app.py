@@ -1,5 +1,8 @@
 import streamlit as st
 import re
+import pandas as pd
+from datetime import datetime
+import urllib.parse
 
 # 1. IMPOSTAZIONI PAGINA
 st.set_page_config(page_title="Regalati un Sogno", page_icon="🍀", layout="centered")
@@ -16,70 +19,52 @@ st.markdown("""
     .quota-box {
         text-align: center; background-color: #e8f5e9; padding: 25px;
         border-radius: 12px; border: 2px solid #c8e6c9; margin-top: 15px;
-        box-shadow: 0 4px 6px rgba(0,0,0,0.05);
-    }
-    .tasse-box {
-        text-align: center; background-color: #fff3cd; padding: 10px;
-        border-radius: 8px; border: 1px solid #ffeeba; margin-bottom: 15px;
-        font-size: 14px; color: #856404;
     }
     .quota-valore { font-size: 36px; font-weight: 800; color: #1b5e20; display: block; }
-    .quota-lettere { font-size: 15px; color: #388e3c; font-style: italic; display: block; }
     </style>
     """, unsafe_allow_html=True)
 
-st.title("🍀 Regalati un Sogno")
-
-# --- FUNZIONI ---
+# --- FUNZIONI AUDIO ---
 def play_audio(url):
     audio_html = f'<audio autoplay="true" style="display:none;"><source src="{url}" type="audio/mpeg"></audio>'
     st.components.v1.html(audio_html, height=0)
 
-def numero_in_lettere(n):
-    if n == 0: return "zero"
-    units = ["", "uno", "due", "tre", "quattro", "cinque", "sei", "sette", "otto", "nove"]
-    teens = ["dieci", "undici", "dodici", "tredici", "quattordici", "quindici", "sedici", "diciassette", "diciotto", "diciannove"]
-    tens = ["", "", "venti", "trenta", "quaranta", "cinquanta", "sessanta", "settanta", "ottanta", "novanta"]
-    def convert_999(num):
-        res = ""
-        h, t, u = num // 100, (num % 100) // 10, num % 10
-        if h > 0: res += "cento" if h == 1 else units[h] + "cento"
-        if t == 1: res += teens[u]
-        else:
-            res += tens[t]
-            if u > 0:
-                if res and res[-1] in "ai" and units[u][0] in "ua": res = res[:-1]
-                res += units[u]
-        return res
-    def convert_recursive(num):
-        if num < 1000: return convert_999(num)
-        if num < 1000000:
-            m, r = num // 1000, num % 1000
-            return ("mille" if m == 1 else convert_999(m) + "mila") + convert_999(r)
-        m, r = num // 1000000, num % 1000000
-        return ("unmilione" if m == 1 else convert_999(m) + "milioni") + convert_recursive(r)
-    return convert_recursive(int(n))
+# --- FUNZIONE ARCHIVIO (CSV locale) ---
+def salva_vincita(punti, importo_netto):
+    nuovo_dato = {
+        'Data': datetime.now().strftime("%d/%m/%Y %H:%M"),
+        'Punti': punti,
+        'Euro_Netto': importo_netto
+    }
+    try:
+        df = pd.read_csv('archivio_vincite.csv')
+        df = pd.concat([df, pd.DataFrame([nuovo_dato])], ignore_index=True)
+    except FileNotFoundError:
+        df = pd.DataFrame([nuovo_dato])
+    df.to_csv('archivio_vincite.csv', index=False)
 
-def format_euro(valore):
-    return f"{valore:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
-
-def distribuisci_numeri():
-    if st.session_state.incolla_qui:
-        numeri = re.findall(r'\d+', st.session_state.incolla_qui)
-        if len(numeri) >= 6:
-            for i in range(6): st.session_state[f"n{i}"] = int(numeri[i])
+def carica_archivio():
+    try:
+        return pd.read_csv('archivio_vincite.csv')
+    except FileNotFoundError:
+        return pd.DataFrame(columns=['Data', 'Punti', 'Euro_Netto'])
 
 # --- INTERFACCIA ---
-tab1, tab2, tab3 = st.tabs(["🔍 Verifica", "📜 Schedine", "💰 Calcolo Netto"])
+st.title("🍀 Regalati un Sogno")
+tab1, tab2, tab3, tab4 = st.tabs(["🔍 Verifica", "📜 Schedine", "💰 Calcolo", "🏛️ Il Bottino"])
 
 with tab1:
-    st.info("🔗 **Passo 1:** Copia i numeri dal sito ufficiale")
-    st.link_button("Vai al sito ADM 🏛️", "https://www.adm.gov.it/portale/monopoli/giochi/giochi_num_total/superenalotto", use_container_width=True)
-    st.divider()
-    st.subheader("📋 Passo 2: Incolla e Verifica")
-    st.text_input("Incolla la sequenza (spazio o trattino) e premi INVIO:", key="incolla_qui", on_change=distribuisci_numeri)
+    st.subheader("📋 Incolla e Verifica")
+    # Logica di distribuzione numeri (già esistente)
+    def distribuisci_numeri():
+        if st.session_state.incolla_qui:
+            numeri = re.findall(r'\d+', st.session_state.incolla_qui)
+            if len(numeri) >= 6:
+                for i in range(6): st.session_state[f"n{i}"] = int(numeri[i])
+
+    st.text_input("Sequenza (spazio o trattino):", key="incolla_qui", on_change=distribuisci_numeri)
     
-    with st.expander("👁️ Vedi/Modifica i numeri rilevati", expanded=False):
+    with st.expander("👁️ Numeri rilevati", expanded=False):
         c1, c2, c3 = st.columns(3); c4, c5, c6 = st.columns(3)
         n0 = c1.number_input("1°", 1, 90, key="n0"); n1 = c2.number_input("2°", 1, 90, key="n1")
         n2 = c3.number_input("3°", 1, 90, key="n2"); n3 = c4.number_input("4°", 1, 90, key="n3")
@@ -91,53 +76,54 @@ with tab1:
             set_estratti = set(final_nums)
             SCHEDINE = [{3, 10, 17, 40, 85, 86}, {10, 17, 19, 40, 85, 86}, {17, 19, 40, 75, 85, 86}, {3, 19, 40, 75, 85, 86}, {3, 10, 19, 75, 85, 86}, {3, 10, 17, 75, 85, 86}]
             vincite = []
-            for i, schedina in enumerate(SCHEDINE, 1):
-                indovinati = sorted(list(schedina.intersection(set_estratti)))
+            for i, sch in enumerate(SCHEDINE, 1):
+                indovinati = sorted(list(sch.intersection(set_estratti)))
                 if len(indovinati) >= 2: vincite.append((i, len(indovinati), indovinati))
             
             if vincite:
                 st.balloons()
                 play_audio("https://www.myinstants.com/media/sounds/ta-da.mp3")
-                for v in vincite: st.success(f"🔥 **SCHEDINA {v[0]}:** {v[1]} PUNTI! ({v[2]})")
+                msg_wa = "🥳 *VINCITA SUPERENALOTTO!*%0A"
+                for v in vincite:
+                    st.success(f"🔥 **SCHEDINA {v[0]}:** {v[1]} PUNTI! ({v[2]})")
+                    msg_wa += f"• Schedina {v[0]}: {v[1]} Punti ({v[2]})%0A"
+                
+                # Tasto rapido WhatsApp
+                st.markdown(f'''<a href="https://wa.me/?text={msg_wa}" target="_blank"><button style="width:100%; background-color:#25D366; color:white; border:none; padding:10px; border-radius:5px; cursor:pointer; font-weight:bold;">📲 Avvisa il gruppo su WhatsApp</button></a>''', unsafe_allow_html=True)
             else:
                 play_audio("https://www.myinstants.com/media/sounds/sad-trombone.mp3")
                 st.warning("Nessuna vincita. Ritenta!")
 
+with tab3:
+    st.subheader("💰 Calcolo Netto e Archiviazione")
+    premio_lordo = st.number_input("Importo vinto lordo (€)", min_value=0.0, step=10.0)
+    if premio_lordo > 0:
+        netto_tot = premio_lordo - ((premio_lordo - 500) * 0.20 if premio_lordo > 500 else 0)
+        quota = round(netto_tot / 6, 2)
+        
+        st.markdown(f'<div class="quota-box"><span class="quota-valore">{quota} € a testa</span></div>', unsafe_allow_html=True)
+        
+        if st.button("💾 Salva nel Bottino"):
+            salva_vincita("Vedi Dettaglio", netto_tot)
+            st.toast("Vincita salvata nell'archivio!", icon="✅")
+
+with tab4:
+    st.subheader("🏛️ Il Bottino Storico")
+    df_storico = carica_archivio()
+    if not df_storico.empty:
+        st.dataframe(df_storico, use_container_width=True)
+        totale_vinto = df_storico['Euro_Netto'].sum()
+        st.metric("Totale Netto Accumulato", f"{totale_vinto:,.2f} €".replace(",", "."))
+        if st.button("Svuota Archivio (⚠️ Azione Irreversibile)"):
+            import os
+            if os.path.exists("archivio_vincite.csv"):
+                os.remove("archivio_vincite.csv")
+                st.rerun()
+    else:
+        st.info("L'archivio è ancora vuoto. Inizia a vincere!")
+
 with tab2:
-    st.subheader("Le Sestine del Gruppo")
+    # (Visualizzazione schedine fisse)
+    st.write("Sestine registrate...")
     for i, s in enumerate(["03-10-17-40-85-86", "10-17-19-40-85-86", "17-19-40-75-85-86", "03-19-40-75-85-86", "03-10-19-75-85-86", "03-10-17-75-85-86"], 1):
         st.text(f"Schedina {i}: {s}")
-
-with tab3:
-    st.subheader("💰 Calcolo Netto in Tasca")
-    premio_lordo = st.number_input("Inserisci la vincita totale lorda (€)", min_value=0.0, step=10.0)
-    
-    if premio_lordo > 0:
-        # Calcolo Tassazione (20% sulla parte eccedente i 500€)
-        if premio_lordo > 500:
-            tasse = (premio_lordo - 500) * 0.20
-            premio_netto = premio_lordo - tasse
-        else:
-            tasse = 0.0
-            premio_netto = premio_lordo
-        
-        quota_netta = round(premio_netto / 6, 2)
-        
-        # UI Tasse
-        if tasse > 0:
-            st.markdown(f"""<div class="tasse-box">
-                Sulla quota eccedente i 500€ è stata applicata la ritenuta del 20% (-{format_euro(tasse)} €).<br>
-                <b>Totale Netto per il gruppo: {format_euro(premio_netto)} €</b>
-            </div>""", unsafe_allow_html=True)
-        else:
-            st.markdown(f'<div class="tasse-box" style="color:#155724; background-color:#d4edda; border-color:#c3e6cb;">Vincita inferiore a 500€: esente da tasse!</div>', unsafe_allow_html=True)
-
-        # UI Quota Finale
-        lettere = f"{numero_in_lettere(int(quota_netta))}/{int(round((quota_netta - int(quota_netta)) * 100)):02d}"
-        st.markdown(f"""
-        <div class="quota-box">
-            <span style="color:#2e7d32; font-size:14px; text-transform:uppercase; font-weight:600;">Quota netta per ogni socio (6)</span>
-            <span class="quota-valore">{format_euro(quota_netta)} €</span>
-            <span class="quota-lettere">({lettere})</span>
-        </div>
-        """, unsafe_allow_html=True)
