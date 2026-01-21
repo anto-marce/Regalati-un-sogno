@@ -1,85 +1,90 @@
 import streamlit as st
-import pandas as pd
 import matplotlib.pyplot as plt
 
-# Configurazione Pagina
-st.set_page_config(page_title="Regalati un Sogno", page_icon="💰")
+# 1. Configurazione della pagina
+st.set_page_config(page_title="Controllo Schedine", page_icon="🏆")
 
-# --- DATI FISSI ---
+st.title("🏆 Il Sogno - SuperEnalotto")
+st.write("Inserisci i numeri estratti e scopri se abbiamo vinto!")
+
+# --- SEZIONE SUPERENALOTTO ---
+
+# I vostri 6 sistemi (sestine)
 SCHEDINE = [
-    {3, 10, 17, 40, 85, 86}, {10, 17, 19, 40, 85, 86},
-    {17, 19, 40, 75, 85, 86}, {3, 19, 40, 75, 85, 86},
-    {3, 10, 19, 75, 85, 86}, {3, 10, 17, 75, 85, 86}
+    {3, 10, 17, 40, 85, 86},  # Colonna 1
+    {10, 17, 19, 40, 85, 86}, # Colonna 2
+    {17, 19, 40, 75, 85, 86}, # Colonna 3
+    {3, 19, 40, 75, 85, 86},  # Colonna 4
+    {3, 10, 19, 75, 85, 86},  # Colonna 5
+    {3, 10, 17, 75, 85, 86}   # Colonna 6
 ]
-COSTO_ESTRAZIONE_GRUPPO = 6 # 1€ a testa x 6 persone
 
-# --- MENU LATERALE ---
-st.sidebar.title("Menu Principale")
-scelta = st.sidebar.radio("Vai a:", ["🍀 Verifica Vincite", "📊 Cassa Soci"])
+st.subheader("Numeri Estratti")
+cols = st.columns(6)
+n1 = cols[0].number_input("1°", 1, 90, 1)
+n2 = cols[1].number_input("2°", 1, 90, 1)
+n3 = cols[2].number_input("3°", 1, 90, 1)
+n4 = cols[3].number_input("4°", 1, 90, 1)
+n5 = cols[4].number_input("5°", 1, 90, 1)
+n6 = cols[5].number_input("6°", 1, 90, 1)
 
-# --- SEZIONE 1: VERIFICA VINCITE ---
-if scelta == "🍀 Verifica Vincite":
-    st.title("🍀 Verifica le Schedine")
-    st.write("Inserisci i numeri estratti stasera:")
+if st.button("VERIFICA VINCITA"):
+    estratti = {n1, n2, n3, n4, n5, n6}
+    trovato = False
     
-    cols = st.columns(6)
-    n1 = cols[0].number_input("N1", 1, 90, 1)
-    n2 = cols[1].number_input("N2", 1, 90, 1)
-    n3 = cols[2].number_input("N3", 1, 90, 1)
-    n4 = cols[3].number_input("N4", 1, 90, 1)
-    n5 = cols[4].number_input("N5", 1, 90, 1)
-    n6 = cols[5].number_input("N6", 1, 90, 1)
-    
-    if st.button("CONTROLLA"):
-        estratti = {n1, n2, n3, n4, n5, n6}
-        vincite = []
-        for i, s in enumerate(SCHEDINE, 1):
-            punti = len(s.intersection(estratti))
-            if punti >= 2:
-                vincite.append(f"Colonna {i}: {punti} PUNTI!")
+    for i, schedina in enumerate(SCHEDINE, 1):
+        indovinati = schedina.intersection(estratti)
+        punti = len(indovinati)
         
-        if vincite:
+        if punti >= 2:
+            st.success(f"🎯 COLONNA {i}: HAI FATTO {punti} PUNTI! ({indovinati})")
             st.balloons()
-            for v in vincite: st.success(v)
-        else:
-            st.error("Nessuna vincita stasera.")
+            trovato = True
+            
+    if not trovato:
+        st.error("Nessuna vincita. Ritenta la prossima volta!")
 
-# --- SEZIONE 2: CASSA SOCI ---
-elif scelta == "📊 Cassa Soci":
-    st.title("📊 Gestione Cassa Gruppo")
-    
-    st.info("""
-    **Regola:** Ogni socio che paga 15€ copre 15 estrazioni.
-    Il grafico mostra quanto fondo cassa rimane dopo le giocate effettuate.
-    """)
+# --- SEZIONE CASSA SOCI ---
+st.markdown("---") # Linea di separazione
+st.header("📊 Gestione Cassa Soci")
 
-    # Input per la memoria (da aggiornare manualmente quando qualcuno paga)
-    soci_paganti = st.number_input("Quanti soci hanno versato i 15€?", 0, 6, value=6)
-    estrazioni_giocate = st.number_input("Quante estrazioni abbiamo già fatto da inizio cassa?", 0, 100, value=0)
+st.info("Ogni quota da 15€ versata da un socio copre 15 estrazioni (1€ a colonna).")
 
-    # Calcoli
-    entrate_totali = soci_paganti * 15
-    uscite_totali = estrazioni_giocate * COSTO_ESTRAZIONE_GRUPPO
-    fondo_residuo = entrate_totali - uscite_totali
+# Input per la "Memoria" dell'app
+# Nota: Cambia i numeri 'value' qui sotto su GitHub per salvare i dati definitivamente
+col_a, col_b = st.columns(2)
+with col_a:
+    soci_paganti = st.number_input("Quanti soci hanno pagato 15€?", 0, 6, value=6)
+with col_b:
+    estrazioni_fatte = st.number_input("Quante estrazioni abbiamo giocato?", 0, 100, value=0)
 
-    # Visualizzazione Metriche
-    c1, c2, c3 = st.columns(3)
-    c1.metric("Totale Raccolto", f"{entrate_totali}€")
-    c2.metric("Spesa Giocate", f"{uscite_totali}€")
-    c3.metric("Fondo Attuale", f"{fondo_residuo}€")
+# Calcoli
+entrate = soci_paganti * 15
+uscite = estrazioni_fatte * 6  # 6€ totali a estrazione per il gruppo
+residuo = entrate - uscite
 
-    # Grafico a barre
-    st.subheader("Grafico Entrate vs Uscite")
-    fig, ax = plt.subplots()
-    categorie = ['Entrate', 'Uscite', 'Residuo']
-    valori = [entrate_totali, uscite_totali, fondo_residuo]
-    colori = ['#2ecc71', '#e74c3c', '#3498db']
-    
-    ax.bar(categorie, valori, color=colori)
-    st.pyplot(fig)
+# Visualizzazione dei soldi
+c1, c2, c3 = st.columns(3)
+c1.metric("Totale Raccolto", f"{entrate}€")
+c2.metric("Totale Speso", f"{uscite}€")
+c3.metric("Fondo Cassa", f"{residuo}€")
 
-    if fondo_residuo <= 0:
-        st.error("⚠️ FONDO ESAURITO! I soci devono versare la nuova quota.")
-    else:
-        estrazioni_rimanenti = fondo_residuo // COSTO_ESTRAZIONE_GRUPPO
-        st.success(f"✅ Siamo coperti per altre {estrazioni_rimanenti} estrazioni.")
+# --- GRAFICO ---
+st.subheader("Grafico Entrate vs Uscite")
+fig, ax = plt.subplots(figsize=(8, 4))
+categorie = ['Soldi Raccolti', 'Soldi Spesi', 'Fondo Rimanente']
+valori = [entrate, uscite, max(0, residuo)]
+colori = ['#2ecc71', '#e74c3c', '#3498db']
+
+ax.bar(categorie, valori, color=colori)
+ax.set_ylabel('Euro (€)')
+st.pyplot(fig)
+
+# Messaggio di stato
+if residuo > 0:
+    estrazioni_rimanenti = residuo // 6
+    st.success(f"✅ La cassa è in attivo! Siamo coperti per altre {estrazioni_rimanenti} estrazioni.")
+elif residuo == 0:
+    st.warning("⚠️ La cassa è vuota. È ora di raccogliere le nuove quote!")
+else:
+    st.error(f"🆘 Siamo in debito di {abs(residuo)}€! Bisogna ricaricare subito.")
