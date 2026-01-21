@@ -27,7 +27,6 @@ def distribuisci_numeri():
 tab1, tab2, tab3 = st.tabs(["🔍 Verifica Vincita", "📜 Il Nostro Sistema", "💰 Calcolo Quote"])
 
 with tab1:
-    # --- LINK DIRETTO ADM ---
     st.info("🎯 **Passaggio 1:** Prendi i numeri dal sito ufficiale")
     st.link_button("Apri Sito Ufficiale ADM 🏛️", 
                    "https://www.adm.gov.it/portale/monopoli/giochi/giochi_num_total/superenalotto", 
@@ -35,7 +34,6 @@ with tab1:
     
     st.write("---")
     
-    # --- INCOLLA ---
     st.subheader("2. Incolla i numeri estratti")
     st.text_input(
         "Incolla qui la stringa e premi INVIO:", 
@@ -44,7 +42,6 @@ with tab1:
         on_change=distribuisci_numeri
     )
     
-    # --- VERIFICA ---
     with st.expander("Numeri rilevati (modifica se necessario)", expanded=True):
         c1, c2, c3 = st.columns(3)
         c4, c5, c6 = st.columns(3)
@@ -95,6 +92,21 @@ with tab2:
 with tab3:
     st.subheader("💰 Divisione Premio")
     st.write("Inserisci il totale vinto per calcolare le quote:")
-    premio = st.number_input("Totale vinto (€)", min_value=0.0, step=1.0)
+    
+    # Input del premio
+    premio = st.number_input("Totale vinto (€)", min_value=0.0, step=10.0, format="%.2f")
+    
     if premio > 0:
-        st.success(f"Quota individuale (6 persone): **{(premio / 6):.2f} €**")
+        quota = premio / 6
+        
+        # Formattazione con punto per le migliaia e virgola per i decimali
+        premio_f = f"{premio:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
+        quota_f = f"{quota:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
+        
+        st.markdown(f"""
+        ### 📊 Riepilogo Conti
+        * **Premio Totale:** {premio_f} €
+        * **Numero Soci:** 6
+        ---
+        ## 💎 Quota individuale: **{quota_f} €**
+        """)
