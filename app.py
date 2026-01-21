@@ -59,7 +59,7 @@ with tab1:
             
             if punti >= 2:
                 st.balloons()
-                st.success(f"✅ COLONNA {i}: HAI FATTO {punti} PUNTI!")
+                st.success(f"✅ SCHEDINA {i}: HAI FATTO {punti} PUNTI!")
                 st.write(f"Numeri indovinati: {sorted(list(indovinati))}")
                 vincite_trovate = True
         
@@ -81,4 +81,4 @@ with tab2:
     ]
     
     for i, s in enumerate(schedine_lista, 1):
-        st.code(f"Colonna {i}: {s}", language="text")
+        st.code(f"Schedina {i}: {s}", language="text")
