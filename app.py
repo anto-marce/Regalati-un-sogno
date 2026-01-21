@@ -1,5 +1,6 @@
 import streamlit as st
 import re
+import time
 
 # 1. IMPOSTAZIONI PAGINA
 st.set_page_config(page_title="Regalati un Sogno", page_icon="🍀", layout="centered")
@@ -24,15 +25,17 @@ st.markdown("""
 
 st.title("🍀 Regalati un Sogno")
 
-# --- NUOVE FUNZIONI AUDIO (Link più stabili) ---
+# --- FUNZIONE AUDIO AGGIORNATA ---
 def play_audio(url):
-    st.components.v1.html(f"""
-        <audio autoplay>
+    # Inseriamo l'audio in un contenitore HTML con autoplay forzato
+    audio_html = f"""
+        <audio autoplay="true" style="display:none;">
             <source src="{url}" type="audio/mpeg">
         </audio>
-    """, height=0)
+    """
+    st.components.v1.html(audio_html, height=0)
 
-# --- ALTRE FUNZIONI ---
+# --- FUNZIONI DI SUPPORTO ---
 def numero_in_lettere(n):
     if n == 0: return "zero"
     units = ["", "uno", "due", "tre", "quattro", "cinque", "sei", "sette", "otto", "nove"]
@@ -40,8 +43,7 @@ def numero_in_lettere(n):
     tens = ["", "", "venti", "trenta", "quaranta", "cinquanta", "sessanta", "settanta", "ottanta", "novanta"]
     def convert_999(num):
         res = ""
-        h = num // 100
-        t, u = (num % 100) // 10, num % 10
+        h, t, u = num // 100, (num % 100) // 10, num % 10
         if h > 0: res += "cento" if h == 1 else units[h] + "cento"
         if t == 1: res += teens[u]
         else:
@@ -95,12 +97,12 @@ with tab1:
             
             if vincite:
                 st.balloons()
-                # NUOVO JINGLE VINCITA (Fanfara)
-                play_audio("https://actions.google.com/sounds/v1/human_voices/applause.ogg")
+                # NUOVO LINK VITTORIA (Ta-Daaa!)
+                play_audio("https://www.myinstants.com/media/sounds/ta-da.mp3")
                 for v in vincite:
                     st.success(f"🔥 **SCHEDINA {v[0]}:** {v[1]} PUNTI! ({v[2]})")
             else:
-                # NUOVO JINGLE SCONFITTA (Trombone triste)
+                # SCONFITTA (Trombone)
                 play_audio("https://www.myinstants.com/media/sounds/sad-trombone.mp3")
                 st.warning("Nessuna vincita. Ritenta!")
 
