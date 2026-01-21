@@ -17,9 +17,10 @@ st.markdown("""
         border-radius: 12px; border: 2px solid #c8e6c9; margin-top: 15px;
     }
     .quota-valore { font-size: 34px; font-weight: 800; color: #1b5e20; }
-    /* Colori invertiti per lo stato cassa */
-    .cassa-alert { background-color: #f8d7da; color: #721c24; padding: 15px; border-radius: 10px; border: 1px solid #f5c6cb; text-align: center; font-weight: bold; }
-    .cassa-ok { background-color: #d4edda; color: #155724; padding: 15px; border-radius: 10px; border: 1px solid #c3e6cb; text-align: center; font-weight: bold; }
+    
+    /* Box Stato Cassa e Rimanenti */
+    .status-red { background-color: #f8d7da; color: #721c24; padding: 15px; border-radius: 10px; border: 1px solid #f5c6cb; text-align: center; font-weight: bold; }
+    .status-green { background-color: #d4edda; color: #155724; padding: 15px; border-radius: 10px; border: 1px solid #c3e6cb; text-align: center; font-weight: bold; }
     
     div[data-testid="stNumberInput"] input { 
         font-size: 20px !important; font-weight: bold !important; color: #000000 !important; background-color: #ffffff !important;
@@ -27,7 +28,7 @@ st.markdown("""
     </style>
     """, unsafe_allow_html=True)
 
-# --- FUNZIONI DI SERVIZIO ---
+# --- FUNZIONI ---
 def play_audio(url):
     st.components.v1.html(f'<audio autoplay="true" style="display:none;"><source src="{url}" type="audio/mpeg"></audio>', height=0)
 
@@ -43,19 +44,16 @@ def carica_archivio():
 st.title("🍀 Regalati un Sogno")
 tab1, tab2, tab3, tab4 = st.tabs(["🔍 Verifica", "📅 Abbonamento & Cassa", "💰 Calcolo Netto", "🏛️ Dashboard"])
 
-# --- TAB 1: VERIFICA ---
 with tab1:
     st.subheader("📋 Verifica Estrazione")
     def distribuisci_numeri():
         if st.session_state.incolla_qui:
-            numeri = re.findall(r'\d+', st.session_state.incolla_qui)
-            if len(numeri) >= 6:
-                for i in range(6): st.session_state[f"n{i}"] = int(numeri[i])
-
+            nums = re.findall(r'\d+', st.session_state.incolla_qui)
+            if len(nums) >= 6:
+                for i in range(6): st.session_state[f"n{i}"] = int(nums[i])
     st.text_input("Incolla estratti:", key="incolla_qui", on_change=distribuisci_numeri)
     
     if st.button("VERIFICA ORA 🚀", type="primary", use_container_width=True):
-        # Utilizziamo i numeri correnti in session_state
         estratti = [st.session_state.get(f"n{i}", 1) for i in range(6)]
         SCHEDINE = [{3,10,17,40,85,86}, {10,17,19,40,85,86}, {17,19,40,75,85,86}, {3,19,40,75,85,86}, {3,10,19,75,85,86}, {3,10,17,75,85,86}]
         vincite = []
@@ -64,26 +62,28 @@ with tab1:
             if len(presi) >= 2: vincite.append((i, len(presi), presi))
         
         if vincite:
-            st.balloons()
-            play_audio("https://www.myinstants.com/media/sounds/ta-da.mp3")
+            st.balloons(); play_audio("https://www.myinstants.com/media/sounds/ta-da.mp3")
             for v in vincite: st.success(f"🔥 Schedina {v[0]}: {v[1]} Punti!")
         else:
             play_audio("https://www.myinstants.com/media/sounds/sad-trombone.mp3")
             st.warning("Nessuna vincita.")
 
-# --- TAB 2: CASSA & ABBONAMENTO (MODIFICATA) ---
+# --- TAB 2: CASSA & ABBONAMENTO ---
 with tab2:
-    st.subheader("👥 Gestione Abbonamento (15 Concorsi)")
+    st.subheader("👥 Gestione Abbonamento")
     
-    # Sezione Conteggio Concorsi
-    col_a, col_b = st.columns([2, 1])
-    concorsi_fatti = col_a.slider("Concorsi effettuati", 0, 15, key="concorsi_fatti")
+    # Logica Concorsi Rimanenti
+    concorsi_fatti = st.slider("Concorsi già effettuati", 0, 15, key="concorsi_fatti")
     rimanenti = 15 - concorsi_fatti
-    col_b.metric("Rimanenti", rimanenti)
     
+    # Inversione Colori per "Rimanenti"
+    if rimanenti <= 3:
+        st.markdown(f'<div class="status-red">⚠️ CONCORSI RIMANENTI: {rimanenti} / 15<br><small>Rinnovare abbonamento a breve!</small></div>', unsafe_allow_html=True)
+    else:
+        st.markdown(f'<div class="status-green">📅 CONCORSI RIMANENTI: {rimanenti} / 15<br><small>Abbonamento ancora valido</small></div>', unsafe_allow_html=True)
+    
+    st.write("") # Spazio
     st.progress(concorsi_fatti / 15)
-    if rimanenti <= 2:
-        st.error(f"⚠️ Attenzione! Mancano solo {rimanenti} concorsi alla scadenza!")
 
     st.divider()
     st.subheader("💰 Stato Pagamenti Rinnovo")
@@ -96,11 +96,11 @@ with tab2:
     
     pagati = sum([st.session_state.get(f"paga_{i}", False) for i in range(6)])
     
-    # Inversione Colori richiesta
+    # Inversione Colori per "Cassa"
     if pagati < 6:
-        st.markdown(f'<div class="cassa-alert">🔴 CASSA INCOMPLETA: {pagati} / 6 paganti<br><small>Mancano {6-pagati} quote per il prossimo abbonamento</small></div>', unsafe_allow_html=True)
+        st.markdown(f'<div class="status-red">🔴 CASSA INCOMPLETA: {pagati} / 6 PAGANTI<br><small>Mancano {6-pagati} quote per il rinnovo</small></div>', unsafe_allow_html=True)
     else:
-        st.markdown(f'<div class="cassa-ok">✅ CASSA COMPLETA: 6 / 6 paganti<br><small>Tutte le quote sono state raccolte!</small></div>', unsafe_allow_html=True)
+        st.markdown(f'<div class="status-green">✅ CASSA COMPLETA: 6 / 6 PAGANTI<br><small>Tutte le quote raccolte!</small></div>', unsafe_allow_html=True)
 
 # --- TAB 3: CALCOLO ---
 with tab3:
@@ -114,8 +114,8 @@ with tab3:
 with tab4:
     df = carica_archivio()
     if not df.empty:
-        st.metric("Totale Bottino", f"{df['Euro_Netto'].sum():,.2f} €")
+        st.metric("Totale Bottino Netto", f"{df['Euro_Netto'].sum():,.2f} €")
         fig = px.bar(df, x='Data', y='Euro_Netto', color='Punti', title="Storico Vincite")
         st.plotly_chart(fig, use_container_width=True)
     else:
-        st.info("Ancora nessuna vincita registrata.")
+        st.info("Nessuna vincita in archivio.")
