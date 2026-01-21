@@ -11,7 +11,6 @@ st.set_page_config(page_title="Regalati un Sogno", page_icon="🍀", layout="cen
 st.markdown("""
     <style>
     .main { background-color: #f8f9fa; }
-    /* Stile per i pulsanti del menu */
     .stButton button { width: 100%; border-radius: 8px; height: 3em; font-weight: bold; }
     .quota-box {
         text-align: center; background-color: #e8f5e9; padding: 25px;
@@ -21,6 +20,10 @@ st.markdown("""
     .status-red { background-color: #f8d7da; color: #721c24; padding: 15px; border-radius: 10px; border: 1px solid #f5c6cb; text-align: center; font-weight: bold; margin-bottom: 10px; }
     .status-green { background-color: #d4edda; color: #155724; padding: 15px; border-radius: 10px; border: 1px solid #c3e6cb; text-align: center; font-weight: bold; margin-bottom: 10px; }
     .status-blue { background-color: #cce5ff; color: #004085; padding: 15px; border-radius: 10px; border: 1px solid #b8daff; text-align: center; font-weight: bold; margin-bottom: 10px; }
+    
+    div[data-testid="stNumberInput"] input { 
+        font-size: 20px !important; font-weight: bold !important; color: #000000 !important; background-color: #ffffff !important;
+    }
     </style>
     """, unsafe_allow_html=True)
 
@@ -38,20 +41,18 @@ def carica_archivio():
 # --- SIDEBAR MENU (TOGGLE) ---
 with st.sidebar:
     st.title("🍀 Menù")
-    # Utilizziamo un radio button con stile a pulsante (disponibile in alcune versioni) 
-    # o un semplice selectbox/radio per la navigazione
     scelta = st.radio(
         "Naviga tra le sezioni:",
         ["🔍 Verifica Vincite", "📅 Stato Abbonamento", "💰 Calcolo Netto", "🏛️ Dashboard Bottino"],
         index=0
     )
     st.divider()
-    st.info("Inizio: 22 Gen 2026")
+    st.info("Inizio Abbonamento: 22 Gen 2026")
 
 # --- TITOLO PRINCIPALE ---
 st.title("🍀 Regalati un Sogno")
 
-# --- LOGICA NAVIGAZIONE (Invece dei Tab) ---
+# --- LOGICA NAVIGAZIONE ---
 
 if scelta == "🔍 Verifica Vincite":
     st.subheader("📋 Verifica Estrazione")
@@ -63,8 +64,19 @@ if scelta == "🔍 Verifica Vincite":
             if len(nums) >= 6:
                 for i in range(6): st.session_state[f"n{i}"] = int(nums[i])
                 
-    st.text_input("Incolla gli estratti qui:", key="incolla_qui", on_change=distribuisci_numeri)
+    # MODIFICA RICHIESTA: Istruzioni specifiche per l'input
+    st.text_input(
+        "Incolla gli estratti qui (separati da uno spazio o un trattino) e premi INVIO:", 
+        key="incolla_qui", 
+        on_change=distribuisci_numeri,
+        placeholder="Esempio: 1 2 3 4 5 6 oppure 1-2-3-4-5-6"
+    )
     
+    with st.expander("Modifica o conferma numeri manualmente", expanded=False):
+        c = st.columns(6)
+        for i in range(6): 
+            st.session_state[f"n{i}"] = c[i].number_input(f"{i+1}°", 1, 90, key=f"input_n{i}", value=st.session_state.get(f"n{i}", 1))
+
     if st.button("VERIFICA ORA 🚀", type="primary", use_container_width=True):
         estratti = [st.session_state.get(f"n{i}", 1) for i in range(6)]
         SCHEDINE = [{3,10,17,40,85,86}, {10,17,19,40,85,86}, {17,19,40,75,85,86}, {3,19,40,75,85,86}, {3,10,19,75,85,86}, {3,10,17,75,85,86}]
@@ -75,23 +87,24 @@ if scelta == "🔍 Verifica Vincite":
         
         if vincite:
             st.balloons(); play_audio("https://www.myinstants.com/media/sounds/ta-da.mp3")
-            for v in vincite: st.success(f"🔥 Schedina {v[0]}: {v[1]} Punti!")
+            for v in vincite: st.success(f"🔥 Schedina {v[0]}: {v[1]} Punti! ({v[2]})")
+            msg_wa = f"🥳 Abbiamo vinto! Punti fatti: " + ", ".join([str(v[1]) for v in vincite])
+            st.markdown(f'<a href="https://wa.me/?text={msg_wa}" target="_blank"><button style="width:100%; background-color:#25D366; color:white; border:none; padding:12px; border-radius:8px; cursor:pointer; font-weight:bold;">📲 Avvisa il gruppo su WhatsApp</button></a>', unsafe_allow_html=True)
         else:
             play_audio("https://www.myinstants.com/media/sounds/sad-trombone.mp3")
-            st.warning("Nessuna vincita.")
+            st.warning("Nessuna vincita questa volta. Ritenta!")
 
 elif scelta == "📅 Stato Abbonamento":
     st.subheader("📅 Gestione Abbonamento (15 Concorsi)")
-    
-    conc_fatti = st.slider("Concorsi già passati", 0, 15, key="conc_fatti", value=0)
+    conc_fatti = st.slider("Concorsi già effettuati", 0, 15, key="conc_fatti", value=0)
     rimanenti = 15 - conc_fatti
     
     if conc_fatti == 0:
-        st.markdown(f'<div class="status-blue">🚀 PRONTI AL VIA!<br>L\'abbonamento inizia domani 22 Gennaio</div>', unsafe_allow_html=True)
+        st.markdown(f'<div class="status-blue">🚀 PRONTI AL VIA!<br><small>Tutti i 15 concorsi sono ancora disponibili</small></div>', unsafe_allow_html=True)
     elif rimanenti <= 3:
-        st.markdown(f'<div class="status-red">⚠️ RIMANENTI: {rimanenti} / 15<br>PREPARARE RINNOVO</div>', unsafe_allow_html=True)
+        st.markdown(f'<div class="status-red">⚠️ RIMANENTI: {rimanenti} / 15<br><small>PREPARARE RINNOVO</small></div>', unsafe_allow_html=True)
     else:
-        st.markdown(f'<div class="status-green">📅 RIMANENTI: {rimanenti} / 15<br>ABBONAMENTO REGOLARE</div>', unsafe_allow_html=True)
+        st.markdown(f'<div class="status-green">📅 RIMANENTI: {rimanenti} / 15<br><small>ABBONAMENTO REGOLARE</small></div>', unsafe_allow_html=True)
     
     st.progress(conc_fatti / 15)
 
@@ -129,8 +142,6 @@ elif scelta == "🏛️ Dashboard Bottino":
     df = carica_archivio()
     if not df.empty:
         st.metric("Totale Bottino Netto", f"{df['Euro_Netto'].sum():,.2f} €")
-        st.plotly_chart(px.bar(df, x='Data', y='Euro_Netto', title="Vincite nel tempo"), use_container_width=True)
-        with st.expander("Vedi dettagli"):
-            st.write(df)
+        st.plotly_chart(px.bar(df, x='Data', y='Euro_Netto', title="Storico Vincite"), use_container_width=True)
     else:
         st.info("L'archivio è vuoto. Registra le vincite nella sezione 'Calcolo Netto'.")
