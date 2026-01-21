@@ -4,7 +4,7 @@ import re
 # 1. Impostazioni Pagina
 st.set_page_config(page_title="Regalati un Sogno", page_icon="🍀", layout="centered")
 
-# 2. Stile CSS
+# 2. Stile CSS per i numeri
 st.markdown("""
     <style>
     .stNumberInput input { font-size: 20px !important; text-align: center !important; }
@@ -20,63 +20,59 @@ tab1, tab2, tab3 = st.tabs(["🔍 Verifica", "📜 Schedine", "📊 Archivio e Q
 with tab1:
     st.subheader("Inserimento Numeri")
     
-    # CAMPO COPIA E INCOLLA (Sempre visibile)
+    # Campo per incollare
     incollati = st.text_input("Incolla qui l'estrazione:", placeholder="es: 10 20 30 40 50 60")
     
-    # Logica per estrarre i numeri
-    lista_numeri = []
-    if incollati:
-        lista_numeri = re.findall(r'\d+', incollati)
-        if len(lista_numeri) >= 6:
-            st.success(f"✅ Rilevati: {', '.join(lista_numeri[:6])}")
-        else:
-            st.warning(f"Trovati solo {len(lista_numeri)} numeri.")
+    # Estrazione automatica dei numeri dal testo incollato
+    numeri_estratti_da_testo = re.findall(r'\d+', incollati) if incollati else []
+    
+    # Prepariamo i 6 numeri finali da usare per il calcolo
+    final_nums = []
 
-    # CASELLE MANUALI (Nascoste dentro un menu espandibile)
+    # Expander per inserimento manuale o controllo
     with st.expander("Modifica o inserisci a mano"):
-        st.write("Puoi correggere i numeri qui sotto:")
-        c1, c2, c3 = st.columns(3)
-        val1 = int(lista_numeri[0]) if len(lista_numeri) >= 1 else None
-        val2 = int(lista_numeri[1]) if len(lista_numeri) >= 2 else None
-        val3 = int(lista_numeri[2]) if len(lista_numeri) >= 3 else None
+        st.write("I numeri sotto si aggiornano se incolli sopra:")
+        cols = st.columns(3)
+        cols2 = st.columns(3)
         
-        n1 = c1.number_input("1°", 1, 90, value=val1, key="v1")
-        n2 = c2.number_input("2°", 1, 90, value=val2, key="v2")
-        n3 = c3.number_input("3°", 1, 90, value=val3, key="v3")
-        
-        c4, c5, c6 = st.columns(3)
-        val4 = int(lista_numeri[3]) if len(lista_numeri) >= 4 else None
-        val5 = int(lista_numeri[4]) if len(lista_numeri) >= 5 else None
-        val6 = int(lista_numeri[5]) if len(lista_numeri) >= 6 else None
-        
-        n4 = c4.number_input("4°", 1, 90, value=val4, key="v4")
-        n5 = c5.number_input("5°", 1, 90, value=val5, key="v5")
-        n6 = c6.number_input("6°", 1, 90, value=val6, key="v6")
+        for i in range(6):
+            # Se abbiamo un numero incollato lo usiamo, altrimenti lasciamo vuoto (None)
+            default_val = int(numeri_estratti_da_testo[i]) if len(numeri_estratti_da_testo) > i else None
+            
+            # Posizioniamo le caselle nelle colonne
+            target_col = cols[i] if i < 3 else cols2[i-3]
+            
+            n = target_col.number_input(f"{i+1}°", 1, 90, value=default_val, key=f"n{i}")
+            final_nums.append(n)
 
     st.markdown("---")
 
     # BOTTONE VERIFICA
     if st.button("VERIFICA ORA 🚀", use_container_width=True):
-        if n1 and n2 and n3 and n4 and n5 and n6:
-            estratti = {n1, n2, n3, n4, n5, n6}
+        # Controlliamo se abbiamo tutti e 6 i numeri (sia da incolla che manuali)
+        if all(v is not None for v in final_nums):
+            set_estratti = set(final_nums)
+            
             SCHEDINE = [
                 {3, 10, 17, 40, 85, 86}, {10, 17, 19, 40, 85, 86},
                 {17, 19, 40, 75, 85, 86}, {3, 19, 40, 75, 85, 86},
                 {3, 10, 19, 75, 85, 86}, {3, 10, 17, 75, 85, 86}
             ]
+            
             vincite_trovate = False
             for i, schedina in enumerate(SCHEDINE, 1):
-                indovinati = schedina.intersection(estratti)
+                indovinati = schedina.intersection(set_estratti)
                 punti = len(indovinati)
                 if punti >= 2:
                     st.balloons()
                     st.success(f"✅ SCHEDINA {i}: HAI FATTO {punti} PUNTI!")
                     st.write(f"Numeri indovinati: {sorted(list(indovinati))}")
                     vincite_trovate = True
+            
             if not vincite_trovate:
                 st.warning("Nessuna vincita per questa estrazione.")
         else:
-            st.error("Inserisci tutti i 6 numeri (usa il campo incolla o il menu manuale).")
+            st.error("Mancano dei numeri. Incolla l'estrazione o compila le 6 caselle manuali.")
 
 with tab2:
     st.subheader("Il nostro sistema")
