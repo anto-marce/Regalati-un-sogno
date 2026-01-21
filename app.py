@@ -113,8 +113,6 @@ elif scelta == "📅 Stato Abbonamento":
     st.progress(fatti / 15)
     
     st.divider()
-    
-    # --- SEZIONE CASSA SOCI SPOSTATA QUI ---
     st.subheader("👥 Cassa Soci")
     soci = ["VS", "MM", "ED", "AP", "GGC", "AM"]
     c1, c2 = st.columns(2)
@@ -140,6 +138,18 @@ elif scelta == "💰 Calcolo Quote":
     if premio > 0:
         netto = premio - ((premio - 500) * 0.20 if premio > 500 else 0)
         st.markdown(f'<div class="quota-box"><span class="quota-valore">{round(netto/6, 2)} € a testa</span></div>', unsafe_allow_html=True)
+        if st.button("💾 Salva nel Bottino"):
+            salva_vincita("Vincita", netto)
+            st.toast("Salvato!")
+
+elif scelta == "🏛️ Il Bottino":
+    st.subheader("🏛️ Archivio Storico")
+    df = carica_archivio()
+    if not df.empty:
+        st.dataframe(df, use_container_width=True)
+        st.metric("Totale Netto", f"{df['Euro_Netto'].sum():,.2f} €".replace(",", "."))
+    else:
+        st.info("Archivio vuoto.")
         if st.button("💾 Salva nel Bottino"):
             salva_vincita("Vincita", netto)
             st.toast("Salvato!")
