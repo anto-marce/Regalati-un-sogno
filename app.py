@@ -7,7 +7,7 @@ st.set_page_config(
     layout="centered"
 )
 
-# 2. Stile CSS per l'estetica
+# 2. Stile CSS
 st.markdown("""
     <style>
     .stNumberInput input {
@@ -21,15 +21,12 @@ st.markdown("""
     """, unsafe_allow_html=True)
 
 st.title("🍀 Regalati un Sogno")
-st.write("Benvenuti nel sistema del gruppo. Buona fortuna!")
 
-# 3. Schede
-tab1, tab2 = st.tabs(["🔍 Verifica Vincita", "📜 Le Nostre Schedine"])
+# 3. Creazione di 3 Schede
+tab1, tab2, tab3 = st.tabs(["🔍 Verifica", "📜 Schedine", "📊 Archivio e Quote"])
 
 with tab1:
-    st.subheader("Inserisci l'estrazione")
-    
-    # Griglia per i numeri
+    st.subheader("Inserisci i numeri estratti")
     c1, c2, c3 = st.columns(3)
     n1 = c1.number_input("1°", 1, 90, value=None, placeholder="?", key="v1")
     n2 = c2.number_input("2°", 1, 90, value=None, placeholder="?", key="v2")
@@ -40,48 +37,49 @@ with tab1:
     n5 = c5.number_input("5°", 1, 90, value=None, placeholder="?", key="v5")
     n6 = c6.number_input("6°", 1, 90, value=None, placeholder="?", key="v6")
 
-    st.markdown("---")
-
-    # IL BOTTONE (Fai attenzione che sia allineato al margine sinistro del "with tab1")
     if st.button("VERIFICA ORA 🚀", use_container_width=True):
-        # Controllo se i numeri sono presenti
         if n1 and n2 and n3 and n4 and n5 and n6:
             estratti = {n1, n2, n3, n4, n5, n6}
-            
             SCHEDINE = [
                 {3, 10, 17, 40, 85, 86}, {10, 17, 19, 40, 85, 86},
                 {17, 19, 40, 75, 85, 86}, {3, 19, 40, 75, 85, 86},
                 {3, 10, 19, 75, 85, 86}, {3, 10, 17, 75, 85, 86}
             ]
-            
             vincite_trovate = False
             for i, schedina in enumerate(SCHEDINE, 1):
                 indovinati = schedina.intersection(estratti)
                 punti = len(indovinati)
-                
                 if punti >= 2:
                     st.balloons()
                     st.success(f"✅ SCHEDINA {i}: HAI FATTO {punti} PUNTI!")
                     st.write(f"Numeri indovinati: {sorted(list(indovinati))}")
                     vincite_trovate = True
-            
             if not vincite_trovate:
-                st.warning("Nessuna vincita per questa estrazione. Ritenta!")
+                st.warning("Nessuna vincita per questa estrazione.")
         else:
-            st.error("Per favore, inserisci tutti i 6 numeri prima di verificare.")
+            st.error("Inserisci tutti i 6 numeri.")
 
 with tab2:
-    st.subheader("Sistema in gioco")
-    st.info("Ogni partecipante ha una rotazione equa dei numeri variabili.")
-    
+    st.subheader("Il nostro sistema")
     schedine_lista = [
-        "3 - 10 - 17 - 40 - 85 - 86",
-        "10 - 17 - 19 - 40 - 85 - 86",
-        "17 - 19 - 40 - 75 - 85 - 86",
-        "3 - 19 - 40 - 75 - 85 - 86",
-        "3 - 10 - 19 - 75 - 85 - 86",
-        "3 - 10 - 17 - 75 - 85 - 86"
+        "3 - 10 - 17 - 40 - 85 - 86", "10 - 17 - 19 - 40 - 85 - 86",
+        "17 - 19 - 40 - 75 - 85 - 86", "3 - 19 - 40 - 75 - 85 - 86",
+        "3 - 10 - 19 - 75 - 85 - 86", "3 - 10 - 17 - 75 - 85 - 86"
     ]
-    
     for i, s in enumerate(schedine_lista, 1):
         st.code(f"Schedina {i}: {s}", language="text")
+
+with tab3:
+    st.subheader("📊 Risultati e Divisione")
+    
+    # Link rapido all'archivio ufficiale
+    st.link_button("Vedi Estrazioni Ufficiali (Sisal)", "https://www.superenalotto.it/risultati", use_container_width=True)
+    
+    st.divider()
+    
+    # Calcolatore di Quote
+    st.write("💰 **Calcolatore Divisione Vincita**")
+    premio = st.number_input("Inserisci l'importo vinto (€)", min_value=0.0, step=0.50)
+    if premio > 0:
+        quota = premio / 6
+        st.info(f"Ogni partecipante riceve: **{quota:.2f} €**")
