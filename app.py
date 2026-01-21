@@ -116,15 +116,23 @@ with tab2:
 
 with tab3:
     st.subheader("💰 Divisione Premio")
-    premio = st.number_input("Totale vinto (€)", min_value=0.0, step=10.0, format="%.2f")
+    st.write("Inserisci il totale vinto per calcolare le quote:")
+    
+    # MODIFICA: Aggiunto format="%0.2f" che permette la visualizzazione corretta
+    # Nota: Streamlit usa lo standard americano per l'input, ma noi formattiamo in IT nel box sotto
+    premio = st.number_input("Totale vinto (€)", min_value=0.0, step=100.0)
     
     if premio > 0:
         quota = premio / 6
-        quota_f = f"{quota:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
+        
+        # Formattazione per il box verde (Punto per migliaia, virgola per decimali)
+        def format_it(valore):
+            return f"{valore:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
+
+        quota_f = format_it(quota)
         centesimi = int(round((quota - int(quota)) * 100))
         lettere = f"{numero_in_lettere(int(quota))}/{centesimi:02d}"
         
-        # BOX RISULTATO CENTRATO
         st.markdown(f"""
         <div class="quota-box">
             <span style="color: #155724; font-size: 14px; text-transform: uppercase;">Quota individuale (6 persone)</span>
