@@ -22,9 +22,11 @@ st.markdown("""
     }
     .quota-valore { font-size: 36px; font-weight: 800; color: #1b5e20; display: block; }
     .ams-button {
-        display: inline-block; padding: 10px 20px; background-color: #003366; color: white !important;
-        text-decoration: none; border-radius: 5px; font-weight: bold; margin-bottom: 20px; text-align: center; width: 100%;
+        display: inline-block; padding: 12px 20px; background-color: #003366; color: white !important;
+        text-decoration: none; border-radius: 8px; font-weight: bold; margin-bottom: 20px; 
+        text-align: center; width: 100%; border: 1px solid #002244;
     }
+    .ams-button:hover { background-color: #004488; }
     </style>
     """, unsafe_allow_html=True)
 
@@ -53,7 +55,7 @@ def carica_archivio():
     except FileNotFoundError:
         return pd.DataFrame(columns=['Data', 'Punti', 'Euro_Netto'])
 
-# --- SIDEBAR (MENU TOGGLE) ---
+# --- SIDEBAR (MENU NAVIGAZIONE) ---
 with st.sidebar:
     st.title("🍀 Menù")
     scelta = st.radio(
@@ -69,6 +71,7 @@ with st.sidebar:
         if st.checkbox(f"Pagato da {s}", key=f"paga_{s}"):
             pagati += 1
     st.progress(pagati / 6)
+    if pagati == 6: st.success("Cassa Completa!")
 
 # --- CONTENUTO PRINCIPALE ---
 st.title("🍀 Regalati un Sogno")
@@ -76,8 +79,8 @@ st.title("🍀 Regalati un Sogno")
 if scelta == "🔍 Verifica Vincita":
     st.subheader("📋 Verifica Estrazione")
     
-    # PASSO 1: Pulsante AMS
-    st.markdown('<a href="https://www.adm.gov.it/portale/giochi/lotto-e-lotterie/superenalotto" target="_blank" class="ams-button">➡️ PASSO 1: Controlla Estrazione su Sito AMS</a>', unsafe_allow_html=True)
+    # PASSO 1: Pulsante AMS con link aggiornato
+    st.markdown('<a href="https://www.adm.gov.it/portale/monopoli/giochi/giochi_num_total/superenalotto" target="_blank" class="ams-button">➡️ PASSO 1: Controlla Estrazione su Sito AMS</a>', unsafe_allow_html=True)
 
     # PASSO 2: Inserimento
     def distribuisci_numeri():
@@ -86,9 +89,9 @@ if scelta == "🔍 Verifica Vincita":
             if len(numeri) >= 6:
                 for i in range(6): st.session_state[f"n{i}"] = int(numeri[i])
 
-    st.text_input("PASSO 2: Incolla sequenza (spazio o trattino):", key="incolla_qui", on_change=distribuisci_numeri, placeholder="Es: 3 10 17 40 85 86")
+    st.text_input("PASSO 2: Incolla sequenza (spazio o trattino):", key="incolla_qui", on_change=distribuisci_numeri, placeholder="Esempio: 5 12 24 38 70 81")
     
-    # Expander CHIUSO di default come richiesto
+    # Expander chiuso di default per i numeri rilevati
     with st.expander("👁️ Numeri rilevati (Clicca per modificare)", expanded=False):
         c1, c2, c3 = st.columns(3); c4, c5, c6 = st.columns(3)
         n0 = c1.number_input("1°", 1, 90, key="n0")
@@ -120,19 +123,19 @@ if scelta == "🔍 Verifica Vincita":
             st.warning("Nessuna vincita. Ritenta!")
 
 elif scelta == "📅 Stato Abbonamento":
-    st.subheader("📅 Abbonamento (15 Concorsi)")
+    st.subheader("📅 Gestione Abbonamento (15 Concorsi)")
     fatti = st.slider("Concorsi già passati", 0, 15, value=0)
     rimanenti = 15 - fatti
-    st.info(f"Rimanenti: {rimanenti} su 15")
+    st.info(f"Concorsi rimanenti: {rimanenti} su 15")
     st.progress(fatti / 15)
     
     st.divider()
-    st.write("**Schedine registrate:**")
+    st.write("**Le nostre sestine:**")
     for i, s in enumerate(["03-10-17-40-85-86", "10-17-19-40-85-86", "17-19-40-75-85-86", "03-19-40-75-85-86", "03-10-19-75-85-86", "03-10-17-75-85-86"], 1):
         st.text(f"Schedina {i}: {s}")
 
 elif scelta == "💰 Calcolo Quote":
-    st.subheader("💰 Calcolo Netto")
+    st.subheader("💰 Calcolo Netto Vincita")
     premio_lordo = st.number_input("Importo vinto lordo (€)", min_value=0.0, step=10.0)
     if premio_lordo > 0:
         netto_tot = premio_lordo - ((premio_lordo - 500) * 0.20 if premio_lordo > 500 else 0)
@@ -140,14 +143,14 @@ elif scelta == "💰 Calcolo Quote":
         st.markdown(f'<div class="quota-box"><span class="quota-valore">{quota} € a testa</span></div>', unsafe_allow_html=True)
         if st.button("💾 Salva nel Bottino"):
             salva_vincita("Vincita", netto_tot)
-            st.toast("Vincita salvata!", icon="✅")
+            st.toast("Vincita registrata correttamente!", icon="✅")
 
 elif scelta == "🏛️ Il Bottino":
-    st.subheader("🏛️ Il Bottino Storico")
+    st.subheader("🏛️ Archivio Storico")
     df_storico = carica_archivio()
     if not df_storico.empty:
         st.dataframe(df_storico, use_container_width=True)
         totale_vinto = df_storico['Euro_Netto'].sum()
         st.metric("Totale Netto Accumulato", f"{totale_vinto:,.2f} €".replace(",", "."))
     else:
-        st.info("L'archivio è ancora vuoto.")
+        st.info("L'archivio è vuoto. Buona fortuna per domani!")
