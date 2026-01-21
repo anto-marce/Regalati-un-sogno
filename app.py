@@ -72,8 +72,8 @@ with tab2:
 with tab3:
     st.subheader("📊 Risultati e Divisione")
     
-    # Link rapido all'archivio ufficiale
-    st.link_button("Vedi Estrazioni Ufficiali (Sisal)", "https://www.superenalotto.it/risultati", use_container_width=True)
+    # Link all'archivio storico completo
+    st.link_button("📜 Archivio Storico Estrazioni", "https://www.superenalotto.it/archivio-estrazioni", use_container_width=True)
     
     st.divider()
     
