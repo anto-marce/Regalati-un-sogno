@@ -32,6 +32,8 @@ st.markdown("""
         text-decoration: none; border-radius: 8px; font-weight: bold; margin-top: 10px; 
         text-align: center; width: 100%;
     }
+    .status-red { background-color: #f8d7da; color: #721c24; padding: 10px; border-radius: 8px; text-align: center; font-weight: bold; margin-bottom: 10px; }
+    .status-green { background-color: #d4edda; color: #155724; padding: 10px; border-radius: 8px; text-align: center; font-weight: bold; margin-bottom: 10px; }
     </style>
     """, unsafe_allow_html=True)
 
@@ -54,27 +56,20 @@ def carica_archivio():
     try: return pd.read_csv('archivio_vincite.csv')
     except FileNotFoundError: return pd.DataFrame(columns=['Data', 'Punti', 'Euro_Netto'])
 
-# --- SIDEBAR ---
+# --- SIDEBAR (MENU NAVIGAZIONE) ---
 with st.sidebar:
     st.title("🍀 Menù")
     scelta = st.radio("Seleziona sezione:", ["🔍 Verifica Vincita", "📅 Stato Abbonamento", "💰 Calcolo Quote", "🏛️ Il Bottino"], index=0)
     st.divider()
-    st.subheader("👥 Cassa Soci")
-    soci = ["VS", "MM", "ED", "AP", "GGC", "AM"]
-    pagati = sum([st.checkbox(f"Pagato da {s}", key=f"paga_{s}") for s in soci])
-    st.progress(pagati / 6)
-    if pagati == 6: st.success("Cassa Completa!")
+    st.info("Inizio Abbonamento: 22 Gen 2026")
 
 # --- CONTENUTO PRINCIPALE ---
 st.title("🍀 Regalati un Sogno")
 
 if scelta == "🔍 Verifica Vincita":
     st.subheader("📋 Verifica Estrazione")
-    
-    # PASSO 1: AMS
     st.markdown('<a href="https://www.adm.gov.it/portale/monopoli/giochi/giochi_num_total/superenalotto" target="_blank" class="ams-button">➡️ PASSO 1: Controlla Estrazione su Sito AMS</a>', unsafe_allow_html=True)
 
-    # PASSO 2: Inserimento
     if 'n0' not in st.session_state:
         for i in range(6): st.session_state[f'n{i}'] = 1
 
@@ -84,7 +79,7 @@ if scelta == "🔍 Verifica Vincita":
             if len(numeri) >= 6:
                 for i in range(6): st.session_state[f"n{i}"] = int(numeri[i])
 
-    st.text_input("PASSO 2: Incolla sequenza e premi INVIO:", key="incolla_qui", on_change=distribuisci_numeri, placeholder="Es: 5 12 24 38 70 81")
+    st.text_input("PASSO 2: Incolla sequenza e premi INVIO:", key="incolla_qui", on_change=distribuisci_numeri)
     
     with st.expander("👁️ Numeri rilevati (Modifica se necessario)", expanded=False):
         cols = st.columns(6)
@@ -101,13 +96,10 @@ if scelta == "🔍 Verifica Vincita":
         if vincite:
             st.balloons()
             play_audio("https://www.myinstants.com/media/sounds/ta-da.mp3")
-            
             testo_wa = "🥳 *VINCITA SUPERENALOTTO!*\n\n"
             for v in vincite:
                 st.success(f"🔥 **SCHEDINA {v[0]}:** {v[1]} PUNTI! ({v[2]})")
                 testo_wa += f"✅ Schedina {v[0]}: *{v[1]} Punti* ({', '.join(map(str, v[2]))})\n"
-            
-            # LINK API WHATSAPP (I dati vengono codificati solo per il browser locale)
             testo_encoded = urllib.parse.quote(testo_wa)
             st.markdown(f'<a href="https://wa.me/?text={testo_encoded}" target="_blank" class="wa-button">📲 PASSO 3: Invia Esito su WhatsApp</a>', unsafe_allow_html=True)
         else:
@@ -115,10 +107,32 @@ if scelta == "🔍 Verifica Vincita":
             st.warning("Nessuna vincita rilevata.")
 
 elif scelta == "📅 Stato Abbonamento":
-    st.subheader("📅 Abbonamento")
+    st.subheader("📅 Gestione Abbonamento (15 Concorsi)")
     fatti = st.slider("Concorsi passati", 0, 15, value=0)
     st.info(f"Concorsi rimanenti: {15 - fatti} su 15")
     st.progress(fatti / 15)
+    
+    st.divider()
+    
+    # --- SEZIONE CASSA SOCI SPOSTATA QUI ---
+    st.subheader("👥 Cassa Soci")
+    soci = ["VS", "MM", "ED", "AP", "GGC", "AM"]
+    c1, c2 = st.columns(2)
+    pagati = 0
+    for i, s in enumerate(soci):
+        with c1 if i < 3 else c2:
+            if st.checkbox(f"Pagato da {s}", key=f"paga_{s}"):
+                pagati += 1
+    
+    if pagati < 6:
+        st.markdown(f'<div class="status-red">🔴 CASSA: {pagati}/6 SOCI HANNO PAGATO</div>', unsafe_allow_html=True)
+    else:
+        st.markdown('<div class="status-green">✅ CASSA COMPLETA! RINNOVO PRONTO</div>', unsafe_allow_html=True)
+    
+    st.divider()
+    st.write("**Le nostre sestine:**")
+    for i, s in enumerate(["03-10-17-40-85-86", "10-17-19-40-85-86", "17-19-40-75-85-86", "03-19-40-75-85-86", "03-10-19-75-85-86", "03-10-17-75-85-86"], 1):
+        st.text(f"Schedina {i}: {s}")
 
 elif scelta == "💰 Calcolo Quote":
     st.subheader("💰 Calcolo Netto")
