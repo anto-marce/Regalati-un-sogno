@@ -8,7 +8,7 @@ from num2words import num2words
 # 1. IMPOSTAZIONI PAGINA
 st.set_page_config(page_title="Regalati un Sogno", page_icon="🍀", layout="centered")
 
-# 2. STILE CSS
+# 2. STILE CSS DEFINITIVO
 st.markdown("""
     <style>
     .stSelectbox div[data-baseweb="select"] { border: 2px solid #003366 !important; border-radius: 10px; }
@@ -25,16 +25,43 @@ st.markdown("""
     </style>
     """, unsafe_allow_html=True)
 
-# --- INTERFACCIA ---
-st.title("🍀 Regalati un Sogno")
-
-# COUNTDOWN (Ore e Minuti)
+# 3. LOGICA COUNTDOWN CORRETTA
 now = datetime.now()
 target = now.replace(hour=20, minute=0, second=0, microsecond=0)
-if now > target: target += timedelta(days=1)
+
+# Se l'orario attuale è dopo le 20:00, il target diventa domani alle 20:00
+if now >= target:
+    target += timedelta(days=1)
+
 diff = target - now
 ore, resto = divmod(diff.seconds, 3600)
 minuti, _ = divmod(resto, 60)
+
+# 4. FUNZIONI DI SUPPORTO
+def salva_vincita(punti, importo_netto):
+    nuovo_dato = {'Data': datetime.now().strftime("%d/%m/%Y %H:%M"), 'Punti': punti, 'Euro_Netto': importo_netto}
+    try:
+        df = pd.read_csv('archivio_vincite.csv')
+        df = pd.concat([df, pd.DataFrame([nuovo_dato])], ignore_index=True)
+    except:
+        df = pd.DataFrame([nuovo_dato])
+    df.to_csv('archivio_vincite.csv', index=False)
+
+def carica_archivio():
+    try: return pd.read_csv('archivio_vincite.csv')
+    except: return pd.DataFrame(columns=['Data', 'Punti', 'Euro_Netto'])
+
+def formatta_euro_testo(cifra):
+    euro = int(cifra)
+    centesimi = int(round((cifra - euro) * 100))
+    testo = num2words(euro, lang='it') + " euro"
+    if centesimi > 0:
+        testo += f" e {num2words(centesimi, lang='it')} centesimi"
+    return testo
+
+# --- INTERFACCIA PRINCIPALE ---
+st.title("🍀 Regalati un Sogno")
+
 st.markdown(f'<div class="countdown-text">⏳ Prossima estrazione tra: {ore}h {minuti}m</div>', unsafe_allow_html=True)
 
 scelta = st.selectbox("🧭 COSA VUOI FARE?", ["🔍 Verifica Vincita", "📅 Stato Abbonamento", "💰 Calcolo Quote", "🏛️ Il Bottino"])
@@ -72,24 +99,19 @@ if scelta == "🔍 Verifica Vincita":
             if len(indovinati) >= 2: vincite.append((i, len(indovinati), indovinati))
         
         if vincite:
-            # RITORNO AI PALLONCINI NATIVI
             st.balloons()
-            # Audio Ta-Da (Opzionale, lo lasciamo perché funzionava bene)
             st.components.v1.html('<audio autoplay><source src="https://www.myinstants.com/media/sounds/ta-da.mp3" type="audio/mpeg"></audio>', height=0)
-            
             testo_wa = "🥳 *VINCITA SUPERENALOTTO!*\n\n"
             for v in vincite:
                 st.success(f"🔥 **SCHEDINA {v[0]}:** {v[1]} PUNTI! ({v[2]})")
                 testo_wa += f"✅ Schedina {v[0]}: *{v[1]} Punti* ({', '.join(map(str, v[2]))})\n"
             st.markdown(f'<a href="https://wa.me/?text={urllib.parse.quote(testo_wa)}" target="_blank" class="wa-button">📲 PASSO 3: Invia Vincita</a>', unsafe_allow_html=True)
         else:
-            # Audio Triste
             st.components.v1.html('<audio autoplay><source src="https://www.myinstants.com/media/sounds/sad-trombone.mp3" type="audio/mpeg"></audio>', height=0)
             st.warning("Nessuna vincita rilevata. 💸")
             testo_perso = "❌ *ESITO ESTRAZIONE*\n\nNiente da fare ragazzi. Anche stasera il jet privato lo compriamo domani. Si torna a lavorare! 😭💸"
-            st.markdown(f'<a href="https://wa.me/?text={urllib.parse.quote(testo_perso)}" target="_blank" class="wa-button wa-fail">📲 Avvisa i soci del fallimento</a>', unsafe_allow_html=True)
+            st.markdown(f'<a href="https://wa.me/?text={urllib.parse.quote(testo_perso)}" target="_blank" class="wa-button wa-fail">📲 Avvisa i soci</a>', unsafe_allow_html=True)
 
-# ... (Il resto delle sezioni Abbonamento, Calcolo e Bottino rimangono come prima)
 elif scelta == "📅 Stato Abbonamento":
     st.subheader("📅 Gestione Abbonamento")
     fatti = st.slider("Concorsi giocati", 0, 15, value=0)
@@ -115,30 +137,19 @@ elif scelta == "💰 Calcolo Quote":
     if premio > 0:
         netto = premio - ((premio - 500) * 0.20 if premio > 500 else 0)
         quota = round(netto/6, 2)
-        euro = int(quota)
-        centesimi = int(round((quota - euro) * 100))
-        testo_lettere = num2words(euro, lang='it') + " euro"
-        if centesimi > 0:
-            testo_lettere += f" e {num2words(centesimi, lang='it')} centesimi"
+        testo_lettere = formatta_euro_testo(quota)
         st.markdown(f'<div class="quota-box"><span class="quota-valore">{quota:.2f} € a testa</span><span class="quota-testo">{testo_lettere}</span></div>', unsafe_allow_html=True)
         if st.button("💾 Salva nel Bottino"):
-            nuovo_dato = {'Data': datetime.now().strftime("%d/%m/%Y %H:%M"), 'Punti': "Vincita", 'Euro_Netto': netto}
-            try:
-                df = pd.read_csv('archivio_vincite.csv')
-                df = pd.concat([df, pd.DataFrame([nuovo_dato])], ignore_index=True)
-            except:
-                df = pd.DataFrame([nuovo_dato])
-            df.to_csv('archivio_vincite.csv', index=False)
+            salva_vincita("Vincita", netto)
             st.toast("Salvato!")
 
 elif scelta == "🏛️ Il Bottino":
     st.subheader("🏛️ Archivio Storico")
-    try:
-        df = pd.read_csv('archivio_vincite.csv')
+    df = carica_archivio()
+    if not df.empty:
         st.dataframe(df, use_container_width=True)
         st.metric("Totale Netto Accumulato", f"{df['Euro_Netto'].sum():.2f} €")
-    except:
-        st.info("Archivio vuoto.")
+    else: st.info("Archivio vuoto.")
     st.divider()
     st.write("**Le nostre sestine:**")
     sestine = ["03-10-17-40-85-86", "10-17-19-40-85-86", "17-19-40-75-85-86", "03-19-40-75-85-86", "03-10-19-75-85-86", "03-10-17-75-85-86"]
