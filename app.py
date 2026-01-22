@@ -30,7 +30,6 @@ st.markdown("""
 
 # --- FUNZIONI DI FORMATTAZIONE ---
 def format_euro(valore):
-    # Trasforma il numero in formato 1.234.567,89
     return f"{valore:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
 
 # --- FUNZIONI CORE ---
@@ -52,50 +51,9 @@ st.title("🍀 Regalati un Sogno")
 scelta = st.selectbox("🧭 COSA VUOI FARE?", ["🔍 Verifica Vincita", "📅 Stato Abbonamento", "💰 Calcolo Quote", "🏛️ Il Bottino"])
 st.divider()
 
-# --- SEZIONE CALCOLO QUOTE (Aggiornata) ---
-if scelta == "💰 Calcolo Quote":
-    st.subheader("💰 Calcolo Ripartizione Vincita")
-    
-    # Valore lordo con limite aumentato a 1 miliardo
-    premio = st.number_input("Inserisci il premio Lordo (€)", min_value=0.0, max_value=1000000000.0, step=1000.0, format="%.2f")
-    
-    if premio > 0:
-        # Calcolo tasse (20% sulla parte eccedente i 500€)
-        tasse = (premio - 500) * 0.20 if premio > 500 else 0
-        netto_totale = premio - tasse
-        quota_singola = netto_totale / 6
-        
-        st.markdown(f"""
-            <div class="quota-box">
-                <span class="quota-titolo">VINCITA PER CIASCUN SOCIO (NETTO):</span>
-                <span class="quota-valore">{format_euro(quota_singola)} €</span>
-                <hr style="border: 0.5px solid #1b5e20; margin: 15px 0;">
-                <small>Totale Gruppo (Netto): {format_euro(netto_totale)} €</small>
-            </div>
-        """, unsafe_allow_html=True)
-        
-        st.write("")
-        if st.button("💾 Salva questa vincita nel Bottino"):
-            salva_vincita("Vincita Calcolata", netto_totale)
-            st.success("Vincita registrata con successo!")
+# --- LOGICA ---
 
-# --- SEZIONE BOTTINO (Aggiornata) ---
-elif scelta == "🏛️ Il Bottino":
-    st.subheader("🏛️ Archivio Storico")
-    df = carica_archivio()
-    if not df.empty:
-        # Formattazione della tabella per la visualizzazione
-        df_display = df.copy()
-        df_display['Euro_Netto'] = df_display['Euro_Netto'].apply(format_euro)
-        st.table(df_display)
-        
-        totale = df['Euro_Netto'].sum()
-        st.metric("TOTALE NETTO ACCUMULATO", f"{format_euro(totale)} €")
-    else:
-        st.info("L'archivio è attualmente vuoto.")
-
-# --- ALTRE SEZIONI (Invariate) ---
-elif scelta == "🔍 Verifica Vincita":
+if scelta == "🔍 Verifica Vincita":
     st.subheader("📋 Verifica Estrazione")
     st.markdown('<a href="https://www.adm.gov.it/portale/monopoli/giochi/giochi_num_total/superenalotto" target="_blank" class="ams-button">➡️ PASSO 1: Controlla Estrazione su Sito AMS</a>', unsafe_allow_html=True)
 
@@ -108,6 +66,97 @@ elif scelta == "🔍 Verifica Vincita":
             numeri_validi = [int(n) for n in re.findall(r'\d+', testo) if 1 <= int(n) <= 90]
             if len(numeri_validi) >= 6:
                 for i in range(6): st.session_state[f"n{i}"] = numeri_validi[i]
+            else:
+                st.toast("⚠️ Incolla almeno 6 numeri validi!")
+
+    c_in, c_bt = st.columns([4, 1])
+    with c_in:
+        st.text_input("PASSO 2: Incolla qui la sequenza:", key="incolla_qui", on_change=distribuisci_numeri)
+    with c_bt:
+        st.write("")
+        st.write("")
+        if st.button("⤵️"): 
+            distribuisci_numeri()
+            st.rerun()
+    
+    # SEZIONE CHIUSA DI DEFAULT
+    with st.expander("👁️ Controlla o modifica i numeri rilevati", expanded=False):
+        cols = st.columns(6)
+        final_nums = [cols[i].number_input(f"{i+1}°", 1, 90, key=f"n{i}") for i in range(6)]
+    else:
+        # Se l'expander è chiuso, recuperiamo comunque i numeri dallo stato per il calcolo
+        final_nums = [st.session_state[f'n{i}'] for i in range(6)]
+
+    if st.button("VERIFICA ORA 🚀", type="primary", use_container_width=True):
+        set_estratti = set(final_nums)
+        SCHEDINE = [{3,10,17,40,85,86}, {10,17,19,40,85,86}, {17,19,40,75,85,86}, {3,19,40,75,85,86}, {3,10,19,75,85,86}, {3,10,17,75,85,86}]
+        vincite = []
+        for i, sch in enumerate(SCHEDINE, 1):
+            indovinati = sorted(list(sch.intersection(set_estratti)))
+            if len(indovinati) >= 2: 
+                vincite.append((i, len(indovinati), indovinati))
+        
+        if vincite:
+            rain(emoji="💶", font_size=54, falling_speed=5, animation_length="3")
+            testo_wa = "🥳 *VINCITA SUPERENALOTTO!*\n\n"
+            for v in vincite:
+                st.success(f"🔥 **SCHEDINA {v[0]}:** {v[1]} PUNTI! ({v[2]})")
+                testo_wa += f"✅ Schedina {v[0]}: *{v[1]} Punti* ({', '.join(map(str, v[2]))})\n"
+            st.markdown(f'<a href="https://wa.me/?text={urllib.parse.quote(testo_wa)}" target="_blank" class="wa-button">📲 PASSO 3: Invia su WhatsApp</a>', unsafe_allow_html=True)
+        else:
+            st.warning("Nessuna vincita rilevata.")
+
+elif scelta == "💰 Calcolo Quote":
+    st.subheader("💰 Calcolo Ripartizione Vincita")
+    premio = st.number_input("Inserisci il premio Lordo (€)", min_value=0.0, max_value=1000000000.0, step=1000.0, format="%.2f")
+    if premio > 0:
+        tasse = (premio - 500) * 0.20 if premio > 500 else 0
+        netto_totale = premio - tasse
+        quota_singola = netto_totale / 6
+        st.markdown(f"""
+            <div class="quota-box">
+                <span class="quota-titolo">VINCITA PER CIASCUN SOCIO (NETTO):</span>
+                <span class="quota-valore">{format_euro(quota_singola)} €</span>
+                <hr style="border: 0.5px solid #1b5e20; margin: 15px 0;">
+                <small>Totale Gruppo (Netto): {format_euro(netto_totale)} €</small>
+            </div>
+        """, unsafe_allow_html=True)
+        if st.button("💾 Salva questa vincita nel Bottino"):
+            salva_vincita("Vincita Calcolata", netto_totale)
+            st.success("Vincita registrata!")
+
+elif scelta == "📅 Stato Abbonamento":
+    # (Resto del codice invariato...)
+    st.subheader("📅 Gestione Abbonamento (15 Concorsi)")
+    fatti = st.slider("Concorsi già giocati", 0, 15, value=0)
+    rimanenti = 15 - fatti
+    if rimanenti > 5: st.info(f"✅ Concorsi rimanenti: {rimanenti} su 15")
+    elif 1 <= rimanenti <= 5: st.warning(f"⚠️ Attenzione: mancano solo {rimanenti} estrazioni!")
+    else: st.error("🆘 ABBONAMENTO SCADUTO!")
+    st.progress(fatti / 15)
+    st.divider()
+    st.subheader("👥 Cassa Soci")
+    soci = ["VS", "MM", "ED", "AP", "GGC", "AM"]
+    c1, c2 = st.columns(2)
+    pagati = 0
+    for i, s in enumerate(soci):
+        col = c1 if i < 3 else c2
+        with col:
+            if st.checkbox(f"Ricevuta da {s}", key=f"paga_{s}"): pagati += 1
+    if pagati < 6: st.markdown(f'<div class="status-red">🔴 CASSA: {pagati}/6 SOCI</div>', unsafe_allow_html=True)
+    else: st.markdown('<div class="status-green">✅ CASSA COMPLETA!</div>', unsafe_allow_html=True)
+
+elif scelta == "🏛️ Il Bottino":
+    st.subheader("🏛️ Archivio Storico")
+    df = carica_archivio()
+    if not df.empty:
+        df_display = df.copy()
+        df_display['Euro_Netto'] = df_display['Euro_Netto'].apply(format_euro)
+        st.table(df_display)
+        totale = df['Euro_Netto'].sum()
+        st.metric("TOTALE NETTO ACCUMULATO", f"{format_euro(totale)} €")
+    else:
+        st.info("L'archivio è vuoto.")
             else:
                 st.toast("⚠️ Incolla almeno 6 numeri validi!")
 
