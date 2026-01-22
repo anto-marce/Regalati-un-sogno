@@ -5,85 +5,151 @@ from datetime import datetime
 import urllib.parse
 from num2words import num2words
 
-# --- CONFIGURAZIONE ---
-st.set_page_config(page_title="Regalati un Sogno", page_icon="🍀")
+# 1. IMPOSTAZIONI PAGINA
+st.set_page_config(page_title="Regalati un Sogno", page_icon="🍀", layout="centered")
 
-# CSS Ottimizzato per Mobile
+# 2. STILE CSS (Ottimizzato per Mobile)
 st.markdown("""
     <style>
+    .stSelectbox div[data-baseweb="select"] { border: 2px solid #003366 !important; border-radius: 10px; }
     .quota-box {
-        text-align: center; background-color: #f0f4f8; padding: 20px;
-        border-radius: 15px; border: 2px solid #003366; margin: 10px 0;
+        text-align: center; background-color: #e8f5e9; padding: 20px;
+        border-radius: 12px; border: 2px solid #c8e6c9; margin-top: 15px;
     }
-    .quota-valore { font-size: 32px; font-weight: 800; color: #003366; display: block; }
-    .quota-testo { font-size: 16px; color: #555; font-style: italic; text-transform: capitalize; }
+    .quota-valore { font-size: 32px; font-weight: 800; color: #1b5e20; display: block; }
+    .quota-testo { font-size: 18px; font-style: italic; color: #2e7d32; display: block; text-transform: capitalize; }
+    .ams-button {
+        display: block; padding: 12px; background-color: #003366; color: white !important;
+        text-decoration: none; border-radius: 8px; font-weight: bold; text-align: center; margin-bottom: 20px;
+    }
     .wa-button {
-        display: block; text-align: center; padding: 12px; background-color: #25D366; 
-        color: white !important; border-radius: 10px; text-decoration: none; font-weight: bold;
+        display: block; padding: 12px; background-color: #25D366; color: white !important;
+        text-decoration: none; border-radius: 8px; font-weight: bold; text-align: center; margin-top: 10px;
     }
+    .status-red { background-color: #f8d7da; color: #721c24; padding: 10px; border-radius: 8px; text-align: center; font-weight: bold; }
+    .status-green { background-color: #d4edda; color: #155724; padding: 10px; border-radius: 8px; text-align: center; font-weight: bold; }
     </style>
     """, unsafe_allow_html=True)
 
-# --- LOGICA CALCOLO TESTUALE ---
-def euro_in_lettere(cifra):
-    intera = int(cifra)
-    decimali = int(round((cifra - intera) * 100))
-    testo = num2words(intera, lang='it') + " euro"
-    if decimali > 0:
-        testo += f" e {num2words(decimali, lang='it')} centesimi"
-    return testo
+# --- FUNZIONI CORE ---
+def play_audio(url):
+    audio_html = f'<audio autoplay="true" style="display:none;"><source src="{url}" type="audio/mpeg"></audio>'
+    st.components.v1.html(audio_html, height=0)
 
-# --- FUNZIONI DATI ---
+def salva_vincita(punti, importo_netto):
+    nuovo_dato = {'Data': datetime.now().strftime("%d/%m/%Y %H:%M"), 'Punti': punti, 'Euro_Netto': importo_netto}
+    try:
+        df = pd.read_csv('archivio_vincite.csv')
+        df = pd.concat([df, pd.DataFrame([nuovo_dato])], ignore_index=True)
+    except:
+        df = pd.DataFrame([nuovo_dato])
+    df.to_csv('archivio_vincite.csv', index=False)
+
 def carica_archivio():
     try: return pd.read_csv('archivio_vincite.csv')
     except: return pd.DataFrame(columns=['Data', 'Punti', 'Euro_Netto'])
 
-# --- MENU ---
-scelta = st.selectbox("🧭 MENU", ["🔍 Verifica", "📅 Abbonamento", "💰 Calcolo", "🏛️ Archivio"])
+def formatta_euro_testo(cifra):
+    euro = int(cifra)
+    centesimi = int(round((cifra - euro) * 100))
+    testo = num2words(euro, lang='it') + " euro"
+    if centesimi > 0:
+        testo += f" e {num2words(centesimi, lang='it')} centesimi"
+    return testo
 
-if scelta == "🔍 Verifica":
-    st.subheader("🔍 Verifica Vincita")
-    # Qui inserisci la logica re.findall che avevi già (funziona bene)
-    incolla = st.text_input("Incolla qui l'estrazione:")
-    if incolla:
-        numeri = re.findall(r'\d+', incolla)
-        if len(numeri) >= 6:
-            st.success(f"Rilevati: {', '.join(numeri[:6])}")
-            # ... logica confronto sestine ...
+# --- INTERFACCIA ---
+st.title("🍀 Regalati un Sogno")
+scelta = st.selectbox("🧭 COSA VUOI FARE?", ["🔍 Verifica Vincita", "📅 Stato Abbonamento", "💰 Calcolo Quote", "🏛️ Il Bottino"])
+st.divider()
 
-elif scelta == "💰 Calcolo":
-    st.subheader("💰 Calcolo Quote")
-    lordo = st.number_input("Inserisci Lordo Totale (€)", min_value=0.0, step=10.0, format="%.2f")
+if scelta == "🔍 Verifica Vincita":
+    st.subheader("📋 Verifica Estrazione")
+    st.markdown('<a href="https://www.adm.gov.it/portale/monopoli/giochi/giochi_num_total/superenalotto" target="_blank" class="ams-button">➡️ PASSO 1: Sito AMS</a>', unsafe_allow_html=True)
+
+    if 'n0' not in st.session_state:
+        for i in range(6): st.session_state[f'n{i}'] = 1
+
+    def distribuisci_numeri():
+        if st.session_state.incolla_qui:
+            numeri = re.findall(r'\d+', st.session_state.incolla_qui)
+            if len(numeri) >= 6:
+                for i in range(6): st.session_state[f"n{i}"] = int(numeri[i])
+
+    st.text_input("PASSO 2: Incolla sequenza e premi INVIO:", key="incolla_qui", on_change=distribuisci_numeri)
     
-    if lordo > 0:
-        # Calcolo tasse (20% sopra i 500€)
-        netto_totale = lordo - ((lordo - 500) * 0.20 if lordo > 500 else 0)
-        quota_testa = round(netto_totale / 6, 2)
+    with st.expander("👁️ Modifica Numeri Rilevati"):
+        cols = st.columns(6)
+        final_nums = [cols[i].number_input(f"{i+1}°", 1, 90, key=f"n{i}") for i in range(6)]
+
+    if st.button("VERIFICA ORA 🚀", type="primary", use_container_width=True):
+        set_estratti = set(final_nums)
+        SCHEDINE = [{3,10,17,40,85,86}, {10,17,19,40,85,86}, {17,19,40,75,85,86}, {3,19,40,75,85,86}, {3,10,19,75,85,86}, {3,10,17,75,85,86}]
+        vincite = []
+        for i, sch in enumerate(SCHEDINE, 1):
+            indovinati = sorted(list(sch.intersection(set_estratti)))
+            if len(indovinati) >= 2: vincite.append((i, len(indovinati), indovinati))
         
-        testo_lettere = euro_in_lettere(quota_testa)
+        if vincite:
+            st.balloons()
+            play_audio("https://www.myinstants.com/media/sounds/ta-da.mp3")
+            testo_wa = "🥳 *VINCITA SUPERENALOTTO!*\n\n"
+            for v in vincite:
+                st.success(f"🔥 **SCHEDINA {v[0]}:** {v[1]} PUNTI! ({v[2]})")
+                testo_wa += f"✅ Schedina {v[0]}: *{v[1]} Punti* ({', '.join(map(str, v[2]))})\n"
+            st.markdown(f'<a href="https://wa.me/?text={urllib.parse.quote(testo_wa)}" target="_blank" class="wa-button">📲 PASSO 3: Invia su WhatsApp</a>', unsafe_allow_html=True)
+        else:
+            play_audio("https://www.myinstants.com/media/sounds/sad-trombone.mp3")
+            st.warning("Nessuna vincita.")
+
+elif scelta == "📅 Stato Abbonamento":
+    st.subheader("📅 Gestione Abbonamento")
+    fatti = st.slider("Concorsi già giocati", 0, 15, value=0)
+    rimanenti = 15 - fatti
+    if rimanenti > 5: st.info(f"✅ Concorsi rimanenti: {rimanenti} su 15")
+    elif 1 <= rimanenti <= 5: st.warning(f"⚠️ Attenzione: mancano solo {rimanenti} estrazioni!")
+    else: st.error("🆘 ABBONAMENTO SCADUTO!")
+    st.progress(fatti / 15)
+    
+    st.divider()
+    st.subheader("👥 Cassa Soci")
+    soci = ["VS", "MM", "ED", "AP", "GGC", "AM"]
+    pagati = 0
+    c1, c2 = st.columns(2)
+    for i, s in enumerate(soci):
+        with c1 if i < 3 else c2:
+            if st.checkbox(f"Quota da {s}", key=f"paga_{s}"): pagati += 1
+    
+    status_class = "status-green" if pagati == 6 else "status-red"
+    st.markdown(f'<div class="{status_class}">CASSA: {pagati}/6 SOCI</div>', unsafe_allow_html=True)
+
+elif scelta == "💰 Calcolo Quote":
+    st.subheader("💰 Calcolo Netto")
+    premio = st.number_input("Lordo (€)", min_value=0.0, step=10.0, format="%.2f")
+    if premio > 0:
+        netto = premio - ((premio - 500) * 0.20 if premio > 500 else 0)
+        quota = round(netto/6, 2)
+        testo_lettere = formatta_euro_testo(quota)
         
         st.markdown(f"""
             <div class="quota-box">
-                <span class="quota-valore">{quota_testa:.2f} €</span>
+                <span class="quota-valore">{quota:.2f} € a testa</span>
                 <span class="quota-testo">{testo_lettere}</span>
             </div>
         """, unsafe_allow_html=True)
         
         if st.button("💾 Salva nel Bottino"):
-            # Funzione salva_vincita...
-            st.success("Salvato correttamente!")
+            salva_vincita("Vincita", netto)
+            st.toast("Salvato!")
 
-elif scelta == "📅 Abbonamento":
-    st.subheader("📅 Stato Abbonamento")
-    fatti = st.slider("Concorsi fatti", 0, 15, 0)
-    st.metric("Rimanenti", 15 - fatti)
-    st.progress(fatti / 15)
-
-elif scelta == "🏛️ Archivio":
-    st.subheader("🏛️ Il Bottino")
+elif scelta == "🏛️ Il Bottino":
+    st.subheader("🏛️ Archivio Storico")
     df = carica_archivio()
     if not df.empty:
-        st.dataframe(df)
-        st.metric("Totale Accumulato", f"{df['Euro_Netto'].sum():.2f} €")
-    else:
-        st.info("Nessuna vincita salvata.")
+        st.dataframe(df, use_container_width=True)
+        st.metric("Totale Netto Accumulato", f"{df['Euro_Netto'].sum():.2f} €")
+    else: st.info("Archivio vuoto.")
+    
+    st.divider()
+    st.write("**Le nostre sestine:**")
+    sestine = ["03-10-17-40-85-86", "10-17-19-40-85-86", "17-19-40-75-85-86", "03-19-40-75-85-86", "03-10-19-75-85-86", "03-10-17-75-85-86"]
+    for i, s in enumerate(sestine, 1): st.text(f"Schedina {i}: {s}")
