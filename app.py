@@ -8,9 +8,6 @@ from num2words import num2words
 # 1. IMPOSTAZIONI PAGINA
 st.set_page_config(page_title="Regalati un Sogno", page_icon="🍀", layout="centered")
 
-# CARICAMENTO LIBRERIA MONETINE (Confetti) ALL'AVVIO
-st.markdown('<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.5.1/dist/confetti.browser.min.js"></script>', unsafe_allow_html=True)
-
 # 2. STILE CSS
 st.markdown("""
     <style>
@@ -41,47 +38,30 @@ st.markdown("""
         padding: 5px 8px; margin: 2px; font-weight: bold; 
         border: 1px solid #b8860b; display: inline-block; min-width: 32px; text-align: center;
     }
+    /* Stile per la cascata di monete (GIF) */
+    .coin-overlay {
+        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+        z-index: 9999; pointer-events: none;
+    }
     </style>
     """, unsafe_allow_html=True)
 
-# Funzione migliorata per Audio e Monetine
-def trigger_vincita():
-    # Usiamo un unico blocco HTML per forzare l'esecuzione
+# Funzione Audio + Cascata (GIF)
+def trigger_vincita_visiva():
+    # Audio + Visualizzazione GIF Monete per 5 secondi
     st.components.v1.html("""
-        <div style="display:none;">
-            <audio autoplay><source src="https://www.myinstants.com/media/sounds/ta-da.mp3" type="audio/mpeg"></audio>
-            <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.5.1/dist/confetti.browser.min.js"></script>
+        <audio autoplay><source src="https://www.myinstants.com/media/sounds/ta-da.mp3" type="audio/mpeg"></audio>
+        <div id="coins" style="position:fixed; top:0; left:0; width:100vw; height:100vh; pointer-events:none; z-index:9999;">
+            <img src="https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExNHJmZzRreGZ6ZzRreGZ6ZzRreGZ6ZzRreGZ6ZzRreGZ6ZzRreCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9cw/l0ExhcOSvFGknvEqc/giphy.gif" style="width:100%; height:100%; object-fit:cover; opacity:0.8;">
         </div>
         <script>
-            function fire() {
-                var duration = 5 * 1000;
-                var end = Date.now() + duration;
-                (function frame() {
-                    confetti({
-                        particleCount: 7,
-                        angle: 60,
-                        spread: 55,
-                        origin: { x: 0, y: 0.8 },
-                        colors: ['#FFD700', '#FFA500', '#FF8C00']
-                    });
-                    confetti({
-                        particleCount: 7,
-                        angle: 120,
-                        spread: 55,
-                        origin: { x: 1, y: 0.8 },
-                        colors: ['#FFD700', '#FFA500', '#FF8C00']
-                    });
-                    if (Date.now() < end) {
-                        requestAnimationFrame(frame);
-                    }
-                }());
-            }
-            // Avvia dopo un piccolo ritardo per assicurarsi che la pagina sia pronta
-            setTimeout(fire, 100);
+            setTimeout(function(){
+                document.getElementById('coins').style.display = 'none';
+            }, 5000);
         </script>
     """, height=0)
 
-def trigger_perso():
+def trigger_perso_audio():
     st.components.v1.html("""
         <audio autoplay><source src="https://www.myinstants.com/media/sounds/sad-trombone.mp3" type="audio/mpeg"></audio>
     """, height=0)
@@ -124,7 +104,6 @@ if scelta == "🔍 Verifica Vincita":
 
     if st.button("VERIFICA ORA 🚀", type="primary", use_container_width=True):
         set_estratti = set(final_nums)
-        # Sestine dell'utente
         SCHEDINE = [{3,10,17,40,85,86}, {10,17,19,40,85,86}, {17,19,40,75,85,86}, {3,19,40,75,85,86}, {3,10,19,75,85,86}, {3,10,17,75,85,86}]
         vincite = []
         for i, sch in enumerate(SCHEDINE, 1):
@@ -132,19 +111,19 @@ if scelta == "🔍 Verifica Vincita":
             if len(indovinati) >= 2: vincite.append((i, len(indovinati), indovinati))
         
         if vincite:
-            trigger_vincita() # AUDIO + CASCATA MONETE
+            trigger_vincita_visiva() # <-- ORA CARICA LA GIF MONETE
             testo_wa = "🥳 *VINCITA SUPERENALOTTO!*\n\n"
             for v in vincite:
                 st.success(f"🔥 **SCHEDINA {v[0]}:** {v[1]} PUNTI! ({v[2]})")
                 testo_wa += f"✅ Schedina {v[0]}: *{v[1]} Punti* ({', '.join(map(str, v[2]))})\n"
             st.markdown(f'<a href="https://wa.me/?text={urllib.parse.quote(testo_wa)}" target="_blank" class="wa-button">📲 PASSO 3: Invia Vincita</a>', unsafe_allow_html=True)
         else:
-            trigger_perso() # AUDIO TRISTE
+            trigger_perso_audio()
             st.warning("Nessuna vincita rilevata. 💸")
             testo_perso = "❌ *ESITO ESTRAZIONE*\n\nNiente da fare ragazzi. Anche stasera il jet privato lo compriamo domani. Si torna a lavorare! 😭💸"
             st.markdown(f'<a href="https://wa.me/?text={urllib.parse.quote(testo_perso)}" target="_blank" class="wa-button wa-fail">📲 Avvisa i soci del fallimento</a>', unsafe_allow_html=True)
 
-# ... (Sezioni Abbonamento, Quote e Bottino rimangono le stesse della versione precedente)
+# ... (Restanti sezioni invariate)
 elif scelta == "📅 Stato Abbonamento":
     st.subheader("📅 Gestione Abbonamento")
     fatti = st.slider("Concorsi giocati", 0, 15, value=0)
@@ -170,16 +149,13 @@ elif scelta == "💰 Calcolo Quote":
     if premio > 0:
         netto = premio - ((premio - 500) * 0.20 if premio > 500 else 0)
         quota = round(netto/6, 2)
-        # Funzione per scrivere in lettere (es: 100 -> cento)
         euro = int(quota)
         centesimi = int(round((quota - euro) * 100))
         testo_lettere = num2words(euro, lang='it') + " euro"
         if centesimi > 0:
             testo_lettere += f" e {num2words(centesimi, lang='it')} centesimi"
-            
         st.markdown(f'<div class="quota-box"><span class="quota-valore">{quota:.2f} € a testa</span><span class="quota-testo">{testo_lettere}</span></div>', unsafe_allow_html=True)
         if st.button("💾 Salva nel Bottino"):
-            # Salvataggio su CSV (funzione semplificata)
             nuovo_dato = {'Data': datetime.now().strftime("%d/%m/%Y %H:%M"), 'Punti': "Vincita", 'Euro_Netto': netto}
             try:
                 df = pd.read_csv('archivio_vincite.csv')
