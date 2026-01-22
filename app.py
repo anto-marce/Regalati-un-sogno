@@ -6,9 +6,9 @@ import urllib.parse
 from streamlit_extras.let_it_rain import rain 
 
 # --- CONFIGURAZIONE ---
-st.set_page_config(page_title="Regalati un Sogno v2.3", page_icon="🍀", layout="centered")
+st.set_page_config(page_title="Regalati un Sogno v2.4", page_icon="🍀", layout="centered")
 
-# --- STILE CSS UNIVERSALE ---
+# --- STILE CSS UNIVERSALE (Dark & Light) ---
 st.markdown("""
     <style>
     .stSelectbox div[data-baseweb="select"] { border: 2px solid #4CAF50 !important; border-radius: 10px; }
@@ -19,11 +19,11 @@ st.markdown("""
     .quota-titolo { font-size: 20px; font-weight: 800; color: #4CAF50; display: block; margin-bottom: 10px; }
     .quota-valore { font-size: 38px; font-weight: 900; color: #FFD700; display: block; text-shadow: 1px 1px 2px #000; }
     .wa-button { 
-        display: inline-block; padding: 14px 20px; background-color: #25D366; color: white !important; 
+        display: inline-block; padding: 14px 20px; background-color: #25D366 !important; color: white !important; 
         text-decoration: none; border-radius: 10px; width: 100%; text-align: center; font-weight: 800; font-size: 18px;
     }
     .ams-button { 
-        display: inline-block; padding: 12px 20px; background-color: #2196F3; color: white !important; 
+        display: inline-block; padding: 12px 20px; background-color: #2196F3 !important; color: white !important; 
         text-decoration: none; border-radius: 10px; width: 100%; text-align: center; font-weight: bold;
     }
     .status-red { background-color: rgba(255, 82, 82, 0.2); color: #FF5252; padding: 12px; border-radius: 10px; text-align: center; font-weight: 900; border: 2px solid #FF5252; }
@@ -49,8 +49,10 @@ def db_load():
     except: return pd.DataFrame(columns=['Data', 'Punti', 'Euro_Netto'])
 
 # --- INIZIALIZZAZIONE SESSION STATE ---
-if 'numeri_estratti' not in st.session_state:
-    st.session_state.numeri_estratti = [1, 1, 1, 1, 1, 1]
+# Inizializziamo n0, n1, n2, n3, n4, n5 singolarmente per massima compatibilità
+for i in range(6):
+    if f'n{i}' not in st.session_state:
+        st.session_state[f'n{i}'] = 1
 
 # --- INTERFACCIA ---
 st.title("🍀 Regalati un Sogno")
@@ -61,26 +63,29 @@ st.divider()
 if scelta == "🔍 Verifica Vincita":
     st.markdown('<a href="https://www.adm.gov.it/portale/monopoli/giochi/giochi_num_total/superenalotto" target="_blank" class="ams-button">➡️ APRI SITO UFFICIALE AMS</a>', unsafe_allow_html=True)
     
-    txt = st.text_input("1. Incolla numeri:", placeholder="Es. 3 10 17 40 85 86")
+    # Text input per incollare
+    txt = st.text_input("1. Incolla numeri qui:", key="input_testo", placeholder="Es. 3, 10, 17, 40, 85, 86")
     
     if st.button("Carica Numeri nelle celle ⤵️"):
         nums = [int(n) for n in re.findall(r'\d+', txt) if 1 <= int(n) <= 90]
         if len(nums) >= 6:
-            st.session_state.numeri_estratti = nums[:6]
+            # Aggiornamento forzato dello stato
+            for i in range(6):
+                st.session_state[f'n{i}'] = nums[i]
+            st.success("Numeri caricati! Apri 'Controllo Manuale' per vederli.")
             st.rerun()
         else:
-            st.error("Inserisci almeno 6 numeri validi.")
+            st.error("Errore: Incolla una sequenza con almeno 6 numeri.")
 
+    # Expander con i numeri
     with st.expander("👁️ Controllo e Modifica Manuale", expanded=False):
         c = st.columns(6)
-        nuovi_valori = []
         for i in range(6):
-            val = c[i].number_input(f"{i+1}°", 1, 90, value=st.session_state.numeri_estratti[i], key=f"cella_{i}")
-            nuovi_valori.append(val)
-        st.session_state.numeri_estratti = nuovi_valori
+            # Usiamo il valore dello session_state direttamente nel widget
+            st.session_state[f'n{i}'] = c[i].number_input(f"{i+1}°", 1, 90, key=f"widget_n{i}", value=st.session_state[f'n{i}'])
 
     if st.button("VERIFICA ORA 🚀", type="primary", use_container_width=True):
-        estratti = st.session_state.numeri_estratti
+        estratti = [st.session_state[f'n{i}'] for i in range(6)]
         SCHEDINE = [{3,10,17,40,85,86}, {10,17,19,40,85,86}, {17,19,40,75,85,86}, {3,19,40,75,85,86}, {3,10,19,75,85,86}, {3,10,17,75,85,86}]
         results = []
         for idx, s in enumerate(SCHEDINE, 1):
@@ -95,7 +100,7 @@ if scelta == "🔍 Verifica Vincita":
                 msg += f"✅ Sch {r[0]}: {r[1]} Pt ({r[2]})\n"
             st.markdown(f'<a href="https://wa.me/?text={urllib.parse.quote(msg)}" target="_blank" class="wa-button">📲 CONDIVIDI SU WHATSAPP</a>', unsafe_allow_html=True)
         else:
-            st.info("Nessuna vincita rilevata.")
+            st.info("Nessuna vincita rilevata con i numeri inseriti.")
 
 elif scelta == "📅 Abbonamento":
     st.subheader("📊 Stato Giocate")
