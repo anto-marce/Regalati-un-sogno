@@ -1,10 +1,9 @@
 import streamlit as st
 import re
 import pandas as pd
-from datetime import datetime, time, timedelta
+from datetime import datetime, timedelta
 import urllib.parse
 from num2words import num2words
-import time as time_lib
 
 # 1. IMPOSTAZIONI PAGINA E STILE
 st.set_page_config(page_title="Regalati un Sogno", page_icon="🍀", layout="centered")
@@ -29,7 +28,12 @@ st.markdown("""
     .wa-fail { background-color: #6c757d !important; }
     .status-red { background-color: #f8d7da; color: #721c24; padding: 10px; border-radius: 8px; text-align: center; font-weight: bold; }
     .status-green { background-color: #d4edda; color: #155724; padding: 10px; border-radius: 8px; text-align: center; font-weight: bold; }
-    .countdown-text { font-size: 20px; font-weight: bold; color: #d32f2f; text-align: center; }
+    .countdown-text { font-size: 18px; font-weight: bold; color: #d32f2f; text-align: center; background: #fff3e0; padding: 10px; border-radius: 10px; border: 1px solid #ffe0b2; }
+    .lotto-ball {
+        background-color: #FFD700; color: black; border-radius: 50%; 
+        padding: 5px 8px; margin: 2px; font-weight: bold; 
+        border: 1px solid #b8860b; display: inline-block; min-width: 30px; text-align: center;
+    }
     </style>
     """, unsafe_allow_html=True)
 
@@ -62,15 +66,14 @@ def formatta_euro_testo(cifra):
 # --- INTERFACCIA ---
 st.title("🍀 Regalati un Sogno")
 
-# --- COUNTDOWN ---
+# COUNTDOWN DINAMICO
 now = datetime.now()
 target = now.replace(hour=20, minute=0, second=0, microsecond=0)
-if now > target:
-    target += timedelta(days=1)
+if now > target: target += timedelta(days=1)
 diff = target - now
 ore, resto = divmod(diff.seconds, 3600)
 minuti, secondi = divmod(resto, 60)
-st.markdown(f'<p class="countdown-text">⏳ Prossima estrazione tra: {ore}h {minuti}m {secondi}s</p>', unsafe_allow_html=True)
+st.markdown(f'<div class="countdown-text">⏳ Prossima estrazione tra: {ore}h {minuti}m {secondi}s</div>', unsafe_allow_html=True)
 
 scelta = st.selectbox("🧭 COSA VUOI FARE?", ["🔍 Verifica Vincita", "📅 Stato Abbonamento", "💰 Calcolo Quote", "🏛️ Il Bottino"])
 st.divider()
@@ -123,9 +126,11 @@ elif scelta == "📅 Stato Abbonamento":
     st.subheader("📅 Gestione Abbonamento")
     fatti = st.slider("Concorsi giocati", 0, 15, value=0)
     rimanenti = 15 - fatti
-    if rimanenti > 5: st.info(f"✅ Rimanenti: {rimanenti}/15")
-    elif 1 <= rimanenti <= 5: st.warning(f"⚠️ Mancano solo {rimanenti} estrazioni!")
-    else: st.error("🆘 ABBONAMENTO SCADUTO!")
+    
+    # METRICHE RAPIDE
+    m1, m2 = st.columns(2)
+    m1.metric("Rimanenti", f"{rimanenti}/15")
+    
     st.progress(fatti / 15)
     
     st.divider()
@@ -137,6 +142,7 @@ elif scelta == "📅 Stato Abbonamento":
         with c1 if i < 3 else c2:
             if st.checkbox(f"Quota {s}", key=f"paga_{s}"): pagati += 1
     
+    m2.metric("Soci Pagati", f"{pagati}/6")
     status_class = "status-green" if pagati == 6 else "status-red"
     st.markdown(f'<div class="{status_class}">CASSA: {pagati}/6 SOCI PAGATI</div>', unsafe_allow_html=True)
 
@@ -168,6 +174,10 @@ elif scelta == "🏛️ Il Bottino":
     else: st.info("Archivio vuoto.")
     
     st.divider()
-    with st.expander("📝 Visualizza le nostre Sestine"):
-        sestine = ["03-10-17-40-85-86", "10-17-19-40-85-86", "17-19-40-75-85-86", "03-19-40-75-85-86", "03-10-19-75-85-86", "03-10-17-75-85-86"]
-        for i, s in enumerate(sestine, 1): st.text(f"Schedina {i}: {s}")
+    st.write("**Le nostre sestine:**")
+    sestine = ["03-10-17-40-85-86", "10-17-19-40-85-86", "17-19-40-75-85-86", "03-19-40-75-85-86", "03-10-19-75-85-86", "03-10-17-75-85-86"]
+    for i, s in enumerate(sestine, 1):
+        num_list = s.split('-')
+        balls_html = "".join([f'<span class="lotto-ball">{n}</span>' for n in num_list])
+        st.markdown(f"**Schedina {i}:** {balls_html}", unsafe_allow_html=True)
+        
