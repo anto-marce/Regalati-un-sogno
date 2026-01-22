@@ -6,9 +6,9 @@ import urllib.parse
 from streamlit_extras.let_it_rain import rain 
 
 # --- CONFIGURAZIONE ---
-st.set_page_config(page_title="Regalati un Sogno v3.0", page_icon="🍀", layout="centered")
+st.set_page_config(page_title="Regalati un Sogno v3.1", page_icon="🍀", layout="centered")
 
-# --- STILE CSS UNIVERSALE (Light & Dark) ---
+# --- STILE CSS UNIVERSALE ---
 st.markdown("""
     <style>
     .stSelectbox div[data-baseweb="select"] { border: 2px solid #4CAF50 !important; border-radius: 10px; }
@@ -54,7 +54,7 @@ def carica_numeri_callback():
         numeri = [int(n) for n in re.findall(r'\d+', testo) if 1 <= int(n) <= 90]
         if len(numeri) >= 6:
             st.session_state.n = numeri[:6]
-            st.toast("✅ Numeri caricati correttamente!")
+            st.toast("✅ Numeri pronti nelle celle!")
 
 # --- INTERFACCIA ---
 st.title("🍀 Regalati un Sogno")
@@ -63,16 +63,12 @@ scelta = st.selectbox("🧭 NAVIGAZIONE", menu)
 st.divider()
 
 if scelta == "🔍 Verifica Vincita":
-    st.markdown('<a href="https://www.adm.gov.it/portale/monopoli/giochi/giochi_num_total/superenalotto" target="_blank" class="ams-button">➡️ APRI SITO UFFICIALE AMS</a>', unsafe_allow_html=True)
+    st.markdown('<a href="https://www.adm.gov.it/portale/monopoli/giochi/giochi_num_total/superenalotto" target="_blank" class="ams-button">➡️ SITO UFFICIALE AMS</a>', unsafe_allow_html=True)
     
-    # Input con callback immediato
-    st.text_input("1. Incolla numeri qui:", key="txt_input", on_change=carica_numeri_callback, placeholder="Es. 3 10 17 40 85 86")
+    st.text_input("1. Incolla numeri e premi INVIO:", key="txt_input", on_change=carica_numeri_callback)
     
-    st.info("💡 Dopo aver incollato, premi INVIO o clicca fuori dal campo per aggiornare le celle.")
-
     with st.expander("👁️ Controllo e Modifica Manuale", expanded=False):
         c = st.columns(6)
-        # Aggiorniamo i singoli valori basandoci sullo stato centrale
         for i in range(6):
             st.session_state.n[i] = c[i].number_input(f"{i+1}°", 1, 90, value=st.session_state.n[i], key=f"cell_{i}")
 
@@ -86,9 +82,57 @@ if scelta == "🔍 Verifica Vincita":
         
         if results:
             rain(emoji="💶", font_size=54, falling_speed=5, animation_length="3")
-            msg = "🥳 *VINCITA SUPERENALOTTO!*\n\n"
+            msg = "🥳 VINCITA SUPERENALOTTO!\n\n"
             for r in results:
                 st.success(f"🔥 Schedina {r[0]}: {r[1]} Punti! ({r[2]})")
                 msg += f"✅ Sch {r[0]}: {r[1]} Pt ({r[2]})\n"
-            st.markdown(f'<a href="https://wa.me/?text={urllib.parse.quote(msg)})" target="_blank" class="wa-button">📲 CONDIVIDI SU WHATSAPP</a>', unsafe_allow
             
+            link_wa = f"https://wa.me/?text={urllib.parse.quote(msg)}"
+            st.markdown(f'<a href="{link_wa}" target="_blank" class="wa-button">📲 CONDIVIDI SU WHATSAPP</a>', unsafe_allow_html=True)
+        else:
+            st.info("Nessuna vincita rilevata.")
+
+elif scelta == "📅 Abbonamento":
+    st.subheader("📊 Stato Giocate")
+    fatti = st.slider("Concorsi completati", 0, 15, 0)
+    st.progress(fatti / 15)
+    st.write(f"Rimanenti: {15-fatti}")
+    st.divider()
+    soci = ["VS", "MM", "ED", "AP", "GGC", "AM"]
+    pagati = 0
+    c1, c2 = st.columns(2)
+    for i, s in enumerate(soci):
+        col = c1 if i < 3 else c2
+        if col.checkbox(f"Quota {s}", key=f"p_{s}"): pagati += 1
+    if pagati == 6: st.markdown('<div class="status-green">✅ CASSA COMPLETA</div>', unsafe_allow_html=True)
+    else: st.markdown(f'<div class="status-red">⏳ MANCANO {6-pagati} QUOTE</div>', unsafe_allow_html=True)
+
+elif scelta == "💰 Calcolo Quote":
+    st.subheader("💰 Calcolo Ripartizione")
+    lordo = st.number_input("Premio Lordo (€)", min_value=0.0, format="%.2f", step=100.0)
+    if lordo > 0:
+        netto = lordo - ((lordo-500)*0.20 if lordo > 500 else 0)
+        st.markdown(f"""
+            <div class="quota-box">
+                <span class="quota-titolo">VINCITA PER SOCIO (NETTA):</span>
+                <span class="quota-valore">{format_it(netto/6)} €</span>
+                <hr style="border: 1px solid #4CAF50;">
+                <span style="font-weight: bold;">Totale Netto Gruppo: {format_it(netto)} €</span>
+            </div>
+        """, unsafe_allow_html=True)
+        if st.button("💾 REGISTRA"):
+            db_save("Vincita", netto)
+            st.toast("Salvato!")
+
+elif scelta == "🏛️ Il Bottino":
+    st.subheader("📜 Storico Vincite")
+    try:
+        df = pd.read_csv('archivio_vincite.csv')
+        if not df.empty:
+            df_view = df.copy()
+            df_view['Euro_Netto'] = df_view['Euro_Netto'].apply(format_it)
+            st.table(df_view)
+            st.metric("TOTALE ACCUMULATO", f"{format_it(df['Euro_Netto'].sum())} €")
+        else: st.info("Vuoto.")
+    except: st.info("Nessun dato salvato.")
+        
