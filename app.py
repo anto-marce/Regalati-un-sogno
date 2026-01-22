@@ -5,10 +5,9 @@ from datetime import datetime
 import urllib.parse
 from num2words import num2words
 
-# 1. IMPOSTAZIONI PAGINA
+# 1. IMPOSTAZIONI PAGINA E STILE
 st.set_page_config(page_title="Regalati un Sogno", page_icon="🍀", layout="centered")
 
-# 2. STILE CSS (Ottimizzato per Mobile)
 st.markdown("""
     <style>
     .stSelectbox div[data-baseweb="select"] { border: 2px solid #003366 !important; border-radius: 10px; }
@@ -26,6 +25,7 @@ st.markdown("""
         display: block; padding: 12px; background-color: #25D366; color: white !important;
         text-decoration: none; border-radius: 8px; font-weight: bold; text-align: center; margin-top: 10px;
     }
+    .wa-fail { background-color: #6c757d !important; }
     .status-red { background-color: #f8d7da; color: #721c24; padding: 10px; border-radius: 8px; text-align: center; font-weight: bold; }
     .status-green { background-color: #d4edda; color: #155724; padding: 10px; border-radius: 8px; text-align: center; font-weight: bold; }
     </style>
@@ -64,7 +64,7 @@ st.divider()
 
 if scelta == "🔍 Verifica Vincita":
     st.subheader("📋 Verifica Estrazione")
-    st.markdown('<a href="https://www.adm.gov.it/portale/monopoli/giochi/giochi_num_total/superenalotto" target="_blank" class="ams-button">➡️ PASSO 1: Sito AMS</a>', unsafe_allow_html=True)
+    st.markdown('<a href="https://www.adm.gov.it/portale/monopoli/giochi/giochi_num_total/superenalotto" target="_blank" class="ams-button">➡️ PASSO 1: Sito Ufficiale AMS</a>', unsafe_allow_html=True)
 
     if 'n0' not in st.session_state:
         for i in range(6): st.session_state[f'n{i}'] = 1
@@ -75,11 +75,14 @@ if scelta == "🔍 Verifica Vincita":
             if len(numeri) >= 6:
                 for i in range(6): st.session_state[f"n{i}"] = int(numeri[i])
 
-    st.text_input("PASSO 2: Incolla sequenza e premi INVIO:", key="incolla_qui", on_change=distribuisci_numeri)
+    st.text_input("PASSO 2: Incolla numeri e premi INVIO:", key="incolla_qui", on_change=distribuisci_numeri)
     
-    with st.expander("👁️ Modifica Numeri Rilevati"):
-        cols = st.columns(6)
-        final_nums = [cols[i].number_input(f"{i+1}°", 1, 90, key=f"n{i}") for i in range(6)]
+    with st.expander("👁️ Modifica Numeri"):
+        cols = st.columns(3) # Layout compatto per mobile
+        final_nums = []
+        for i in range(6):
+            with cols[i % 3]:
+                final_nums.append(st.number_input(f"{i+1}°", 1, 90, key=f"n{i}"))
 
     if st.button("VERIFICA ORA 🚀", type="primary", use_container_width=True):
         set_estratti = set(final_nums)
@@ -96,17 +99,20 @@ if scelta == "🔍 Verifica Vincita":
             for v in vincite:
                 st.success(f"🔥 **SCHEDINA {v[0]}:** {v[1]} PUNTI! ({v[2]})")
                 testo_wa += f"✅ Schedina {v[0]}: *{v[1]} Punti* ({', '.join(map(str, v[2]))})\n"
-            st.markdown(f'<a href="https://wa.me/?text={urllib.parse.quote(testo_wa)}" target="_blank" class="wa-button">📲 PASSO 3: Invia su WhatsApp</a>', unsafe_allow_html=True)
+            st.markdown(f'<a href="https://wa.me/?text={urllib.parse.quote(testo_wa)}" target="_blank" class="wa-button">📲 PASSO 3: Invia Vincita</a>', unsafe_allow_html=True)
         else:
             play_audio("https://www.myinstants.com/media/sounds/sad-trombone.mp3")
-            st.warning("Nessuna vincita.")
+            st.warning("Nessuna vincita rilevata. 💸")
+            # OPZIONE 1: Realista Tragico
+            testo_perso = "❌ *ESITO ESTRAZIONE*\n\nNiente da fare ragazzi. Anche stasera il jet privato lo compriamo domani. Si torna a lavorare! 😭💸"
+            st.markdown(f'<a href="https://wa.me/?text={urllib.parse.quote(testo_perso)}" target="_blank" class="wa-button wa-fail">📲 Avvisa i soci del fallimento</a>', unsafe_allow_html=True)
 
 elif scelta == "📅 Stato Abbonamento":
     st.subheader("📅 Gestione Abbonamento")
-    fatti = st.slider("Concorsi già giocati", 0, 15, value=0)
+    fatti = st.slider("Concorsi giocati", 0, 15, value=0)
     rimanenti = 15 - fatti
-    if rimanenti > 5: st.info(f"✅ Concorsi rimanenti: {rimanenti} su 15")
-    elif 1 <= rimanenti <= 5: st.warning(f"⚠️ Attenzione: mancano solo {rimanenti} estrazioni!")
+    if rimanenti > 5: st.info(f"✅ Rimanenti: {rimanenti}/15")
+    elif 1 <= rimanenti <= 5: st.warning(f"⚠️ Mancano solo {rimanenti} estrazioni!")
     else: st.error("🆘 ABBONAMENTO SCADUTO!")
     st.progress(fatti / 15)
     
@@ -117,14 +123,14 @@ elif scelta == "📅 Stato Abbonamento":
     c1, c2 = st.columns(2)
     for i, s in enumerate(soci):
         with c1 if i < 3 else c2:
-            if st.checkbox(f"Quota da {s}", key=f"paga_{s}"): pagati += 1
+            if st.checkbox(f"Quota {s}", key=f"paga_{s}"): pagati += 1
     
     status_class = "status-green" if pagati == 6 else "status-red"
-    st.markdown(f'<div class="{status_class}">CASSA: {pagati}/6 SOCI</div>', unsafe_allow_html=True)
+    st.markdown(f'<div class="{status_class}">CASSA: {pagati}/6 SOCI PAGATI</div>', unsafe_allow_html=True)
 
 elif scelta == "💰 Calcolo Quote":
     st.subheader("💰 Calcolo Netto")
-    premio = st.number_input("Lordo (€)", min_value=0.0, step=10.0, format="%.2f")
+    premio = st.number_input("Lordo Totale (€)", min_value=0.0, step=10.0, format="%.2f")
     if premio > 0:
         netto = premio - ((premio - 500) * 0.20 if premio > 500 else 0)
         quota = round(netto/6, 2)
@@ -150,6 +156,6 @@ elif scelta == "🏛️ Il Bottino":
     else: st.info("Archivio vuoto.")
     
     st.divider()
-    st.write("**Le nostre sestine:**")
-    sestine = ["03-10-17-40-85-86", "10-17-19-40-85-86", "17-19-40-75-85-86", "03-19-40-75-85-86", "03-10-19-75-85-86", "03-10-17-75-85-86"]
-    for i, s in enumerate(sestine, 1): st.text(f"Schedina {i}: {s}")
+    with st.expander("📝 Visualizza le nostre Sestine"):
+        sestine = ["03-10-17-40-85-86", "10-17-19-40-85-86", "17-19-40-75-85-86", "03-19-40-75-85-86", "03-10-19-75-85-86", "03-10-17-75-85-86"]
+        for i, s in enumerate(sestine, 1): st.text(f"Schedina {i}: {s}")
