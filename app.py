@@ -8,7 +8,7 @@ from num2words import num2words
 # 1. IMPOSTAZIONI PAGINA
 st.set_page_config(page_title="Regalati un Sogno", page_icon="🍀", layout="centered")
 
-# 2. STILE CSS DEFINITIVO
+# 2. STILE CSS
 st.markdown("""
     <style>
     .stSelectbox div[data-baseweb="select"] { border: 2px solid #003366 !important; border-radius: 10px; }
@@ -25,17 +25,32 @@ st.markdown("""
     </style>
     """, unsafe_allow_html=True)
 
-# 3. LOGICA COUNTDOWN CORRETTA
-now = datetime.now()
-target = now.replace(hour=19, minute=0, second=0, microsecond=0)
+# 3. LOGICA CALENDARIO UFFICIALE (Mar, Gio, Ven, Sab)
+def calcola_prossima_estrazione():
+    adesso = datetime.now()
+    giorni_estrazione = [1, 3, 4, 5] # Lun=0, Mar=1, Mer=2, Gio=3, Ven=4, Sab=5, Dom=6
+    
+    prossima = adesso.replace(hour=19, minute=0, second=0, microsecond=0)
+    
+    # Se oggi è giorno di estrazione ma sono passate le 20, o se oggi non è giorno di estrazione
+    if adesso.weekday() not in giorni_estrazione or adesso >= prossima:
+        # Cerca il prossimo giorno valido
+        for i in range(1, 8):
+            test_data = adesso + timedelta(days=i)
+            if test_data.weekday() in giorni_estrazione:
+                return test_data.replace(hour=20, minute=0, second=0, microsecond=0)
+    return prossima
 
-# Se l'orario attuale è dopo le 20:00, il target diventa domani alle 20:00
-if now >= target:
-    target += timedelta(days=1)
-
-diff = target - now
+target = calcola_prossima_estrazione()
+diff = target - adesso
+giorni = diff.days
 ore, resto = divmod(diff.seconds, 3600)
 minuti, _ = divmod(resto, 60)
+
+# Formattazione testo countdown
+testo_timer = f"{ore}h {minuti}m"
+if giorni > 0:
+    testo_timer = f"{giorni}g " + testo_timer
 
 # 4. FUNZIONI DI SUPPORTO
 def salva_vincita(punti, importo_netto):
@@ -51,18 +66,10 @@ def carica_archivio():
     try: return pd.read_csv('archivio_vincite.csv')
     except: return pd.DataFrame(columns=['Data', 'Punti', 'Euro_Netto'])
 
-def formatta_euro_testo(cifra):
-    euro = int(cifra)
-    centesimi = int(round((cifra - euro) * 100))
-    testo = num2words(euro, lang='it') + " euro"
-    if centesimi > 0:
-        testo += f" e {num2words(centesimi, lang='it')} centesimi"
-    return testo
-
-# --- INTERFACCIA PRINCIPALE ---
+# --- INTERFACCIA ---
 st.title("🍀 Regalati un Sogno")
 
-st.markdown(f'<div class="countdown-text">⏳ Prossima estrazione tra: {ore}h {minuti}m</div>', unsafe_allow_html=True)
+st.markdown(f'<div class="countdown-text">⏳ Prossima estrazione: {testo_timer}</div>', unsafe_allow_html=True)
 
 scelta = st.selectbox("🧭 COSA VUOI FARE?", ["🔍 Verifica Vincita", "📅 Stato Abbonamento", "💰 Calcolo Quote", "🏛️ Il Bottino"])
 st.divider()
@@ -137,7 +144,11 @@ elif scelta == "💰 Calcolo Quote":
     if premio > 0:
         netto = premio - ((premio - 500) * 0.20 if premio > 500 else 0)
         quota = round(netto/6, 2)
-        testo_lettere = formatta_euro_testo(quota)
+        euro = int(quota)
+        centesimi = int(round((quota - euro) * 100))
+        testo_lettere = num2words(euro, lang='it') + " euro"
+        if centesimi > 0:
+            testo_lettere += f" e {num2words(centesimi, lang='it')} centesimi"
         st.markdown(f'<div class="quota-box"><span class="quota-valore">{quota:.2f} € a testa</span><span class="quota-testo">{testo_lettere}</span></div>', unsafe_allow_html=True)
         if st.button("💾 Salva nel Bottino"):
             salva_vincita("Vincita", netto)
