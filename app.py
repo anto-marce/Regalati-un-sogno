@@ -1,9 +1,10 @@
 import streamlit as st
 import re
 import pandas as pd
-from datetime import datetime
+from datetime import datetime, time, timedelta
 import urllib.parse
 from num2words import num2words
+import time as time_lib
 
 # 1. IMPOSTAZIONI PAGINA E STILE
 st.set_page_config(page_title="Regalati un Sogno", page_icon="🍀", layout="centered")
@@ -28,6 +29,7 @@ st.markdown("""
     .wa-fail { background-color: #6c757d !important; }
     .status-red { background-color: #f8d7da; color: #721c24; padding: 10px; border-radius: 8px; text-align: center; font-weight: bold; }
     .status-green { background-color: #d4edda; color: #155724; padding: 10px; border-radius: 8px; text-align: center; font-weight: bold; }
+    .countdown-text { font-size: 20px; font-weight: bold; color: #d32f2f; text-align: center; }
     </style>
     """, unsafe_allow_html=True)
 
@@ -59,6 +61,17 @@ def formatta_euro_testo(cifra):
 
 # --- INTERFACCIA ---
 st.title("🍀 Regalati un Sogno")
+
+# --- COUNTDOWN ---
+now = datetime.now()
+target = now.replace(hour=20, minute=0, second=0, microsecond=0)
+if now > target:
+    target += timedelta(days=1)
+diff = target - now
+ore, resto = divmod(diff.seconds, 3600)
+minuti, secondi = divmod(resto, 60)
+st.markdown(f'<p class="countdown-text">⏳ Prossima estrazione tra: {ore}h {minuti}m {secondi}s</p>', unsafe_allow_html=True)
+
 scelta = st.selectbox("🧭 COSA VUOI FARE?", ["🔍 Verifica Vincita", "📅 Stato Abbonamento", "💰 Calcolo Quote", "🏛️ Il Bottino"])
 st.divider()
 
@@ -78,7 +91,7 @@ if scelta == "🔍 Verifica Vincita":
     st.text_input("PASSO 2: Incolla numeri e premi INVIO:", key="incolla_qui", on_change=distribuisci_numeri)
     
     with st.expander("👁️ Modifica Numeri"):
-        cols = st.columns(3) # Layout compatto per mobile
+        cols = st.columns(3)
         final_nums = []
         for i in range(6):
             with cols[i % 3]:
@@ -103,7 +116,6 @@ if scelta == "🔍 Verifica Vincita":
         else:
             play_audio("https://www.myinstants.com/media/sounds/sad-trombone.mp3")
             st.warning("Nessuna vincita rilevata. 💸")
-            # OPZIONE 1: Realista Tragico
             testo_perso = "❌ *ESITO ESTRAZIONE*\n\nNiente da fare ragazzi. Anche stasera il jet privato lo compriamo domani. Si torna a lavorare! 😭💸"
             st.markdown(f'<a href="https://wa.me/?text={urllib.parse.quote(testo_perso)}" target="_blank" class="wa-button wa-fail">📲 Avvisa i soci del fallimento</a>', unsafe_allow_html=True)
 
