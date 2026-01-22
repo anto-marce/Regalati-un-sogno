@@ -67,7 +67,7 @@ if scelta == "💰 Calcolo Quote":
         
         st.markdown(f"""
             <div class="quota-box">
-                <span class="quota-titolo">RIUSCITA PER CIASCUN SOCIO (NETTO):</span>
+                <span class="quota-titolo">VINCITA PER CIASCUN SOCIO (NETTO):</span>
                 <span class="quota-valore">{format_euro(quota_singola)} €</span>
                 <hr style="border: 0.5px solid #1b5e20; margin: 15px 0;">
                 <small>Totale Gruppo (Netto): {format_euro(netto_totale)} €</small>
