@@ -4,10 +4,15 @@ import pandas as pd
 from datetime import datetime, timedelta
 import urllib.parse
 from num2words import num2words
+from streamlit_autorefresh import st_autorefresh
 
-# 1. IMPOSTAZIONI PAGINA E STILE
+# 1. IMPOSTAZIONI PAGINA
 st.set_page_config(page_title="Regalati un Sogno", page_icon="🍀", layout="centered")
 
+# Auto-refresh ogni 30 secondi per aggiornare il countdown senza scaricare la batteria
+st_autorefresh(interval=30000, key="countdown_refresh")
+
+# 2. STILE CSS PERSONALIZZATO
 st.markdown("""
     <style>
     .stSelectbox div[data-baseweb="select"] { border: 2px solid #003366 !important; border-radius: 10px; }
@@ -28,11 +33,14 @@ st.markdown("""
     .wa-fail { background-color: #6c757d !important; }
     .status-red { background-color: #f8d7da; color: #721c24; padding: 10px; border-radius: 8px; text-align: center; font-weight: bold; }
     .status-green { background-color: #d4edda; color: #155724; padding: 10px; border-radius: 8px; text-align: center; font-weight: bold; }
-    .countdown-text { font-size: 18px; font-weight: bold; color: #d32f2f; text-align: center; background: #fff3e0; padding: 10px; border-radius: 10px; border: 1px solid #ffe0b2; }
+    .countdown-text { 
+        font-size: 18px; font-weight: bold; color: #d32f2f; text-align: center; 
+        background: #fff3e0; padding: 10px; border-radius: 10px; border: 1px solid #ffe0b2; 
+    }
     .lotto-ball {
         background-color: #FFD700; color: black; border-radius: 50%; 
         padding: 5px 8px; margin: 2px; font-weight: bold; 
-        border: 1px solid #b8860b; display: inline-block; min-width: 30px; text-align: center;
+        border: 1px solid #b8860b; display: inline-block; min-width: 32px; text-align: center;
     }
     </style>
     """, unsafe_allow_html=True)
@@ -66,7 +74,7 @@ def formatta_euro_testo(cifra):
 # --- INTERFACCIA ---
 st.title("🍀 Regalati un Sogno")
 
-# COUNTDOWN DINAMICO
+# SEZIONE COUNTDOWN
 now = datetime.now()
 target = now.replace(hour=20, minute=0, second=0, microsecond=0)
 if now > target: target += timedelta(days=1)
@@ -127,7 +135,6 @@ elif scelta == "📅 Stato Abbonamento":
     fatti = st.slider("Concorsi giocati", 0, 15, value=0)
     rimanenti = 15 - fatti
     
-    # METRICHE RAPIDE
     m1, m2 = st.columns(2)
     m1.metric("Rimanenti", f"{rimanenti}/15")
     
@@ -180,4 +187,3 @@ elif scelta == "🏛️ Il Bottino":
         num_list = s.split('-')
         balls_html = "".join([f'<span class="lotto-ball">{n}</span>' for n in num_list])
         st.markdown(f"**Schedina {i}:** {balls_html}", unsafe_allow_html=True)
-        
