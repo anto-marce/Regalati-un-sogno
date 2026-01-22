@@ -6,30 +6,47 @@ import urllib.parse
 from streamlit_extras.let_it_rain import rain 
 
 # --- CONFIGURAZIONE BLINDATA ---
-st.set_page_config(page_title="Regalati un Sogno v2.0", page_icon="🍀", layout="centered")
+st.set_page_config(page_title="Regalati un Sogno v2.1", page_icon="🍀", layout="centered")
 
-# --- STILE CSS OTTIMIZZATO ---
+# --- STILE CSS ACCESSIBILE (Contrasto Elevato) ---
 st.markdown("""
     <style>
-    .stSelectbox div[data-baseweb="select"] { border: 2px solid #003366 !important; border-radius: 10px; }
+    /* Selectbox e Input */
+    .stSelectbox div[data-baseweb="select"] { border: 2px solid #001f3f !important; border-radius: 10px; }
     div[data-testid="stNumberInput"] input { 
         font-size: 24px !important; text-align: center !important; font-weight: 900 !important; 
-        color: #000000 !important; border: 2px solid #cccccc !important;
+        color: #001f3f !important; border: 2px solid #001f3f !important; background-color: #f8f9fa !important;
     }
+    
+    /* Box Risultato Vincita */
     .quota-box { 
-        text-align: center; background-color: #f0f4f8; padding: 30px; 
-        border-radius: 15px; border: 2px solid #003366; margin-top: 20px;
+        text-align: center; background-color: #ffffff; padding: 30px; 
+        border-radius: 15px; border: 4px solid #053d08; margin-top: 20px;
+        box-shadow: 0px 4px 10px rgba(0,0,0,0.1);
     }
-    .quota-titolo { font-size: 18px; color: #003366; font-weight: bold; display: block; }
-    .quota-valore { font-size: 34px; font-weight: 900; color: #1b5e20; display: block; }
-    .wa-button { display: inline-block; padding: 12px 20px; background-color: #25D366; color: white !important; text-decoration: none; border-radius: 8px; width: 100%; text-align: center; font-weight: bold; }
-    .ams-button { display: inline-block; padding: 12px 20px; background-color: #003366; color: white !important; text-decoration: none; border-radius: 8px; width: 100%; text-align: center; }
-    .status-red { background-color: #f8d7da; color: #721c24; padding: 10px; border-radius: 8px; text-align: center; font-weight: bold; }
-    .status-green { background-color: #d4edda; color: #155724; padding: 10px; border-radius: 8px; text-align: center; font-weight: bold; }
+    .quota-titolo { font-size: 20px; color: #001f3f; font-weight: 800; display: block; margin-bottom: 10px; }
+    .quota-valore { font-size: 36px; font-weight: 900; color: #053d08; display: block; }
+    
+    /* Bottoni */
+    .wa-button { 
+        display: inline-block; padding: 14px 20px; background-color: #128C7E; color: #ffffff !important; 
+        text-decoration: none; border-radius: 8px; width: 100%; text-align: center; font-weight: 800; font-size: 18px;
+    }
+    .ams-button { 
+        display: inline-block; padding: 12px 20px; background-color: #001f3f; color: #ffffff !important; 
+        text-decoration: none; border-radius: 8px; width: 100%; text-align: center; font-weight: bold;
+    }
+    
+    /* Stati Cassa */
+    .status-red { background-color: #ffcccc; color: #990000; padding: 12px; border-radius: 8px; text-align: center; font-weight: 900; border: 2px solid #990000; }
+    .status-green { background-color: #ccffcc; color: #053d08; padding: 12px; border-radius: 8px; text-align: center; font-weight: 900; border: 2px solid #053d08; }
+    
+    /* Testi Generali */
+    p, span, label { color: #001f3f !important; font-weight: 600; }
     </style>
     """, unsafe_allow_html=True)
 
-# --- MOTORE DI CALCOLO E ARCHIVIO ---
+# --- FUNZIONI ---
 def format_it(val):
     return f"{val:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
 
@@ -95,8 +112,8 @@ elif scelta == "📅 Abbonamento":
     fatti = st.slider("Concorsi completati", 0, 15, 0)
     rimanenti = 15 - fatti
     st.progress(fatti / 15)
-    if rimanenti <= 5: st.warning(f"⚠️ Attenzione: mancano {rimanenti} estrazioni al rinnovo!")
-    else: st.success(f"Tutto regolare: mancano {rimanenti} estrazioni.")
+    if rimanenti <= 5: st.warning(f"⚠️ Mancano {rimanenti} estrazioni!")
+    else: st.success(f"Tutto regolare: -{rimanenti}")
     
     st.divider()
     st.subheader("👥 Cassa Rinnovo")
@@ -117,10 +134,10 @@ elif scelta == "💰 Calcolo Quote":
         netto = lordo - ((lordo-500)*0.20 if lordo > 500 else 0)
         st.markdown(f"""
             <div class="quota-box">
-                <span class="quota-titolo">QUOTA SINGOLA (NETTA):</span>
+                <span class="quota-titolo">VINCITA NETTA PER SOCIO:</span>
                 <span class="quota-valore">{format_it(netto/6)} €</span>
-                <hr>
-                <small>Totale Netto Gruppo: {format_it(netto)} €</small>
+                <hr style="border: 1px solid #001f3f;">
+                <span style="color: #001f3f;">Totale Netto Gruppo: {format_it(netto)} €</span>
             </div>
         """, unsafe_allow_html=True)
         if st.button("💾 REGISTRA NEL BOTTINO"):
