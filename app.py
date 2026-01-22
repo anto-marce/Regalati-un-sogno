@@ -29,7 +29,7 @@ st.markdown("""
 def calcola_prossima_estrazione():
     adesso = datetime.now()
     giorni_estrazione = [1, 3, 4, 5] # Mar, Gio, Ven, Sab
-    prossima = adesso.replace(hour=20, minute=0, second=0, microsecond=0)
+    prossima = adesso.replace(hour=19, minute=0, second=0, microsecond=0)
     
     if adesso.weekday() not in giorni_estrazione or adesso >= prossima:
         for i in range(1, 8):
