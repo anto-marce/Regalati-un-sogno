@@ -27,7 +27,7 @@ st.markdown("""
 
 # 3. LOGICA COUNTDOWN CORRETTA
 now = datetime.now()
-target = now.replace(hour=20, minute=0, second=0, microsecond=0)
+target = now.replace(hour=19, minute=0, second=0, microsecond=0)
 
 # Se l'orario attuale è dopo le 20:00, il target diventa domani alle 20:00
 if now >= target:
