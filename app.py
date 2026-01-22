@@ -8,7 +8,7 @@ from num2words import num2words
 # 1. IMPOSTAZIONI PAGINA
 st.set_page_config(page_title="Regalati un Sogno", page_icon="🍀", layout="centered")
 
-# 2. STILE CSS E ANIMAZIONE MONETE
+# 2. STILE CSS
 st.markdown("""
     <style>
     .stSelectbox div[data-baseweb="select"] { border: 2px solid #003366 !important; border-radius: 10px; }
@@ -41,33 +41,35 @@ st.markdown("""
     </style>
     """, unsafe_allow_html=True)
 
-def pioggia_di_monete():
-    # Script JavaScript per creare una pioggia di coriandoli gialli/oro (effetto monete)
+# Funzione per attivare Audio e Monetine insieme
+def trigger_vincita():
+    # Audio Ta-Da + Script Monetine (Confetti Oro)
     st.components.v1.html("""
+        <audio autoplay><source src="https://www.myinstants.com/media/sounds/ta-da.mp3" type="audio/mpeg"></audio>
         <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.5.1/dist/confetti.browser.min.js"></script>
         <script>
-            var end = Date.now() + (5 * 1000); // Dura 5 secondi
-            var colors = ['#ffd700', '#ffaa00', '#ffd700', '#ffffff'];
-            (function frame() {
-                confetti({
-                    particleCount: 10,
-                    angle: 60,
-                    spread: 55,
-                    origin: { x: 0 },
-                    colors: colors
-                });
-                confetti({
-                    particleCount: 10,
-                    angle: 120,
-                    spread: 55,
-                    origin: { x: 1 },
-                    colors: colors
-                });
-                if (Date.now() < end) {
-                    requestAnimationFrame(frame);
-                }
-            }());
+            var duration = 5 * 1000;
+            var animationEnd = Date.now() + duration;
+            var defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 0 };
+
+            function randomInRange(min, max) {
+              return Math.random() * (max - min) + min;
+            }
+
+            var interval = setInterval(function() {
+              var timeLeft = animationEnd - Date.now();
+              if (timeLeft <= 0) { return clearInterval(interval); }
+              var particleCount = 50 * (timeLeft / duration);
+              confetti(Object.assign({}, defaults, { particleCount, origin: { x: randomInRange(0.1, 0.3), y: Math.random() - 0.2 } }));
+              confetti(Object.assign({}, defaults, { particleCount, origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 } }));
+            }, 250);
         </script>
+    """, height=0)
+
+# Funzione Audio Triste
+def trigger_perso():
+    st.components.v1.html("""
+        <audio autoplay><source src="https://www.myinstants.com/media/sounds/sad-trombone.mp3" type="audio/mpeg"></audio>
     """, height=0)
 
 # --- FUNZIONI CORE ---
@@ -95,7 +97,6 @@ def formatta_euro_testo(cifra):
 # --- INTERFACCIA ---
 st.title("🍀 Regalati un Sogno")
 
-# COUNTDOWN
 now = datetime.now()
 target = now.replace(hour=20, minute=0, second=0, microsecond=0)
 if now > target: target += timedelta(days=1)
@@ -138,18 +139,19 @@ if scelta == "🔍 Verifica Vincita":
             if len(indovinati) >= 2: vincite.append((i, len(indovinati), indovinati))
         
         if vincite:
-            pioggia_di_monete() # <-- LA NUOVA ANIMAZIONE CASCATA SLOT
+            trigger_vincita() # AUDIO + MONETINE
             testo_wa = "🥳 *VINCITA SUPERENALOTTO!*\n\n"
             for v in vincite:
                 st.success(f"🔥 **SCHEDINA {v[0]}:** {v[1]} PUNTI! ({v[2]})")
                 testo_wa += f"✅ Schedina {v[0]}: *{v[1]} Punti* ({', '.join(map(str, v[2]))})\n"
             st.markdown(f'<a href="https://wa.me/?text={urllib.parse.quote(testo_wa)}" target="_blank" class="wa-button">📲 PASSO 3: Invia Vincita</a>', unsafe_allow_html=True)
         else:
+            trigger_perso() # SOLO AUDIO TRISTE
             st.warning("Nessuna vincita rilevata. 💸")
             testo_perso = "❌ *ESITO ESTRAZIONE*\n\nNiente da fare ragazzi. Anche stasera il jet privato lo compriamo domani. Si torna a lavorare! 😭💸"
             st.markdown(f'<a href="https://wa.me/?text={urllib.parse.quote(testo_perso)}" target="_blank" class="wa-button wa-fail">📲 Avvisa i soci del fallimento</a>', unsafe_allow_html=True)
 
-# ... (il resto del codice per Abbonamento, Calcolo e Bottino rimane identico)
+# (Seguono le altre sezioni invariate: Abbonamento, Calcolo Quote, Bottino)
 elif scelta == "📅 Stato Abbonamento":
     st.subheader("📅 Gestione Abbonamento")
     fatti = st.slider("Concorsi giocati", 0, 15, value=0)
