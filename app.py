@@ -30,7 +30,7 @@ def calcola_prossima_estrazione():
     adesso = datetime.now()
     giorni_estrazione = [1, 3, 4, 5] # Lun=0, Mar=1, Mer=2, Gio=3, Ven=4, Sab=5, Dom=6
     
-    prossima = adesso.replace(hour=19, minute=0, second=0, microsecond=0)
+    prossima = adesso.replace(hour=20, minute=0, second=0, microsecond=0)
     
     # Se oggi è giorno di estrazione ma sono passate le 20, o se oggi non è giorno di estrazione
     if adesso.weekday() not in giorni_estrazione or adesso >= prossima:
