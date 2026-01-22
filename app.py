@@ -8,10 +8,9 @@ from num2words import num2words
 # 1. IMPOSTAZIONI PAGINA
 st.set_page_config(page_title="Regalati un Sogno", page_icon="🍀", layout="centered")
 
-# 2. STILE CSS
+# 2. STILE CSS (Con animazione a schermo intero)
 st.markdown("""
     <style>
-    /* ... (tutto lo stile CSS precedente rimane uguale) ... */
     .stSelectbox div[data-baseweb="select"] { border: 2px solid #003366 !important; border-radius: 10px; }
     .quota-box { text-align: center; background-color: #e8f5e9; padding: 20px; border-radius: 12px; border: 2px solid #c8e6c9; margin-top: 15px; }
     .quota-valore { font-size: 32px; font-weight: 800; color: #1b5e20; display: block; }
@@ -24,17 +23,55 @@ st.markdown("""
     .countdown-text { font-size: 18px; font-weight: bold; color: #d32f2f; text-align: center; background: #fff3e0; padding: 10px; border-radius: 10px; border: 1px solid #ffe0b2; }
     .lotto-ball { background-color: #FFD700; color: black; border-radius: 50%; padding: 5px 8px; margin: 2px; font-weight: bold; border: 1px solid #b8860b; display: inline-block; min-width: 32px; text-align: center; }
     
-    /* ANIMAZIONE MONETE GIGANTI */
-    @keyframes payout {
-        0% { transform: translateY(100px); opacity: 0; }
-        50% { opacity: 1; }
-        100% { transform: translateY(-100px); opacity: 0; }
+    /* ANIMAZIONE SCHERMO INTERO */
+    @keyframes falling-money {
+        0% { top: -100px; opacity: 0; }
+        10% { opacity: 1; }
+        90% { opacity: 1; }
+        100% { top: 100vh; opacity: 0; }
     }
-    .money-rain {
-        font-size: 80px; text-align: center; animation: payout 2s infinite; margin: 20px 0;
+    .full-screen-money {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        z-index: 9999;
+        pointer-events: none; /* Permette di cliccare attraverso le monete */
+        display: flex;
+        justify-content: space-around;
+        align-items: center;
+        overflow: hidden;
+    }
+    .coin {
+        font-size: 50px;
+        position: absolute;
+        animation: falling-money 3s linear infinite;
     }
     </style>
     """, unsafe_allow_html=True)
+
+# Funzione per scatenare la vincita
+def trigger_vincita_totale():
+    # Audio + Layer di monete che cadono
+    st.components.v1.html("""
+        <audio autoplay><source src="https://www.myinstants.com/media/sounds/ta-da.mp3" type="audio/mpeg"></audio>
+        <div class="full-screen-money">
+            <span class="coin" style="left:10%; animation-delay:0s;">💰</span>
+            <span class="coin" style="left:30%; animation-delay:0.5s;">🪙</span>
+            <span class="coin" style="left:50%; animation-delay:0.2s;">💰</span>
+            <span class="coin" style="left:70%; animation-delay:0.8s;">🪙</span>
+            <span class="coin" style="left:90%; animation-delay:0.3s;">💰</span>
+            <span class="coin" style="left:20%; animation-delay:1.2s;">🪙</span>
+            <span class="coin" style="left:80%; animation-delay:1.5s;">💰</span>
+        </div>
+        <script>
+            // Rimuove l'animazione dopo 6 secondi per non pesare sulla batteria
+            setTimeout(function(){
+                document.querySelector('.full-screen-money').style.display = 'none';
+            }, 6000);
+        </script>
+    """, height=0)
 
 # --- INTERFACCIA ---
 st.title("🍀 Regalati un Sogno")
@@ -52,7 +89,6 @@ scelta = st.selectbox("🧭 COSA VUOI FARE?", ["🔍 Verifica Vincita", "📅 St
 st.divider()
 
 if scelta == "🔍 Verifica Vincita":
-    # ... (parte iniziale della verifica uguale) ...
     st.subheader("📋 Verifica Estrazione")
     st.markdown('<a href="https://www.adm.gov.it/portale/monopoli/giochi/giochi_num_total/superenalotto" target="_blank" class="ams-button">➡️ PASSO 1: Sito Ufficiale AMS</a>', unsafe_allow_html=True)
 
@@ -83,11 +119,8 @@ if scelta == "🔍 Verifica Vincita":
             if len(indovinati) >= 2: vincite.append((i, len(indovinati), indovinati))
         
         if vincite:
-            # AUDIO + EFFETTO MONETE (EMOJI)
-            st.components.v1.html('<audio autoplay><source src="https://www.myinstants.com/media/sounds/ta-da.mp3" type="audio/mpeg"></audio>', height=0)
-            
-            # Mostriamo 3 emoji di monete che saltano (animazione CSS)
-            st.markdown('<div class="money-rain">💰 💰 💰</div>', unsafe_allow_html=True)
+            # EFFETTO SCHERMO INTERO
+            trigger_vincita_totale()
             
             testo_wa = "🥳 *VINCITA SUPERENALOTTO!*\n\n"
             for v in vincite:
@@ -100,7 +133,7 @@ if scelta == "🔍 Verifica Vincita":
             testo_perso = "❌ *ESITO ESTRAZIONE*\n\nNiente da fare ragazzi. Anche stasera il jet privato lo compriamo domani. Si torna a lavorare! 😭💸"
             st.markdown(f'<a href="https://wa.me/?text={urllib.parse.quote(testo_perso)}" target="_blank" class="wa-button wa-fail">📲 Avvisa i soci del fallimento</a>', unsafe_allow_html=True)
 
-# ... (le altre sezioni rimangono uguali)
+# ... (Resto del codice per Abbonamento, Quote e Bottino)
 elif scelta == "📅 Stato Abbonamento":
     st.subheader("📅 Gestione Abbonamento")
     fatti = st.slider("Concorsi giocati", 0, 15, value=0)
