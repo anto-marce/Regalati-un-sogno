@@ -25,14 +25,15 @@ st.markdown("""
     .quota-valore { font-size: 32px; font-weight: 900; color: #1b5e20; display: block; }
     .ams-button { display: inline-block; padding: 12px 20px; background-color: #003366; color: white !important; text-decoration: none; border-radius: 8px; width: 100%; text-align: center; }
     .wa-button { display: inline-block; padding: 12px 20px; background-color: #25D366; color: white !important; text-decoration: none; border-radius: 8px; width: 100%; text-align: center; }
+    .status-red { background-color: #f8d7da; color: #721c24; padding: 10px; border-radius: 8px; text-align: center; font-weight: bold; }
+    .status-green { background-color: #d4edda; color: #155724; padding: 10px; border-radius: 8px; text-align: center; font-weight: bold; }
     </style>
     """, unsafe_allow_html=True)
 
-# --- FUNZIONI DI FORMATTAZIONE ---
+# --- FUNZIONI ---
 def format_euro(valore):
     return f"{valore:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
 
-# --- FUNZIONI CORE ---
 def salva_vincita(punti, importo_netto):
     nuovo_dato = {'Data': datetime.now().strftime("%d/%m/%Y %H:%M"), 'Punti': punti, 'Euro_Netto': importo_netto}
     try:
@@ -52,7 +53,6 @@ scelta = st.selectbox("🧭 COSA VUOI FARE?", ["🔍 Verifica Vincita", "📅 St
 st.divider()
 
 # --- LOGICA ---
-
 if scelta == "🔍 Verifica Vincita":
     st.subheader("📋 Verifica Estrazione")
     st.markdown('<a href="https://www.adm.gov.it/portale/monopoli/giochi/giochi_num_total/superenalotto" target="_blank" class="ams-button">➡️ PASSO 1: Controlla Estrazione su Sito AMS</a>', unsafe_allow_html=True)
@@ -79,16 +79,18 @@ if scelta == "🔍 Verifica Vincita":
             distribuisci_numeri()
             st.rerun()
     
-    # SEZIONE CHIUSA DI DEFAULT
+    # SEZIONE EXPANDER (Corretta)
     with st.expander("👁️ Controlla o modifica i numeri rilevati", expanded=False):
         cols = st.columns(6)
-        final_nums = [cols[i].number_input(f"{i+1}°", 1, 90, key=f"n{i}") for i in range(6)]
-    else:
-        # Se l'expander è chiuso, recuperiamo comunque i numeri dallo stato per il calcolo
-        final_nums = [st.session_state[f'n{i}'] for i in range(6)]
+        # Questi aggiornano direttamente lo session_state
+        for i in range(6):
+            st.number_input(f"{i+1}°", 1, 90, key=f"n{i}")
 
     if st.button("VERIFICA ORA 🚀", type="primary", use_container_width=True):
+        # Recuperiamo i numeri aggiornati dallo session_state
+        final_nums = [st.session_state[f"n{i}"] for i in range(6)]
         set_estratti = set(final_nums)
+        
         SCHEDINE = [{3,10,17,40,85,86}, {10,17,19,40,85,86}, {17,19,40,75,85,86}, {3,19,40,75,85,86}, {3,10,19,75,85,86}, {3,10,17,75,85,86}]
         vincite = []
         for i, sch in enumerate(SCHEDINE, 1):
@@ -108,6 +110,44 @@ if scelta == "🔍 Verifica Vincita":
 
 elif scelta == "💰 Calcolo Quote":
     st.subheader("💰 Calcolo Ripartizione Vincita")
+    premio = st.number_input("Inserisci il premio Lordo (€)", min_value=0.0, max_value=1000000000.0, step=1000.0, format="%.2f")
+    if premio > 0:
+        tasse = (premio - 500) * 0.20 if premio > 500 else 0
+        netto_totale = premio - tasse
+        quota_singola = netto_totale / 6
+        st.markdown(f"""
+            <div class="quota-box">
+                <span class="quota-titolo">RIUSCITA PER CIASCUN SOCIO (NETTO):</span>
+                <span class="quota-valore">{format_euro(quota_singola)} €</span>
+                <hr style="border: 0.5px solid #1b5e20; margin: 15px 0;">
+                <small>Totale Gruppo (Netto): {format_euro(netto_totale)} €</small>
+            </div>
+        """, unsafe_allow_html=True)
+        if st.button("💾 Salva nel Bottino"):
+            salva_vincita("Vincita Calcolata", netto_totale)
+            st.toast("Salvato!")
+
+elif scelta == "📅 Stato Abbonamento":
+    st.subheader("📅 Gestione Abbonamento (15 Concorsi)")
+    fatti = st.slider("Concorsi già giocati", 0, 15, value=0)
+    rimanenti = 15 - fatti
+    if rimanenti > 5: st.info(f"✅ Concorsi rimanenti: {rimanenti} su 15")
+    elif 1 <= rimanenti <= 5: st.warning(f"⚠️ Attenzione: mancano solo {rimanenti} estrazioni!")
+    else: st.error("🆘 ABBONAMENTO SCADUTO!")
+    st.progress(fatti / 15)
+    st.divider()
+    st.subheader("👥 Cassa Soci")
+    soci = ["VS", "MM", "ED", "AP", "GGC", "AM"]
+    c1, c2 = st.columns(2)
+    pagati = 0
+    for i, s in enumerate(soci):
+        col = c1 if i < 3 else c2
+        with col:
+            if st.checkbox(f"Ricevuta da {s}", key=f"paga_{s}"): pagati += 1
+    if pagati < 6: st.markdown(f'<div class="status-red">🔴 CASSA: {pagati}/6 SOCI</div>', unsafe_allow_html=True)
+    else: st.markdown('<div class="status-green">✅ CASSA COMPLETA!</div>', unsafe_allow_html=True)
+
+elif
     premio = st.number_input("Inserisci il premio Lordo (€)", min_value=0.0, max_value=1000000000.0, step=1000.0, format="%.2f")
     if premio > 0:
         tasse = (premio - 500) * 0.20 if premio > 500 else 0
