@@ -11,43 +11,35 @@ st.set_page_config(page_title="Regalati un Sogno", page_icon="🍀", layout="cen
 # 2. STILE CSS
 st.markdown("""
     <style>
+    /* ... (tutto lo stile CSS precedente rimane uguale) ... */
     .stSelectbox div[data-baseweb="select"] { border: 2px solid #003366 !important; border-radius: 10px; }
-    .quota-box {
-        text-align: center; background-color: #e8f5e9; padding: 20px;
-        border-radius: 12px; border: 2px solid #c8e6c9; margin-top: 15px;
-    }
+    .quota-box { text-align: center; background-color: #e8f5e9; padding: 20px; border-radius: 12px; border: 2px solid #c8e6c9; margin-top: 15px; }
     .quota-valore { font-size: 32px; font-weight: 800; color: #1b5e20; display: block; }
     .quota-testo { font-size: 18px; font-style: italic; color: #2e7d32; display: block; text-transform: capitalize; }
-    .ams-button {
-        display: block; padding: 12px; background-color: #003366; color: white !important;
-        text-decoration: none; border-radius: 8px; font-weight: bold; text-align: center; margin-bottom: 20px;
-    }
-    .wa-button {
-        display: block; padding: 12px; background-color: #25D366; color: white !important;
-        text-decoration: none; border-radius: 8px; font-weight: bold; text-align: center; margin-top: 10px;
-    }
+    .ams-button { display: block; padding: 12px; background-color: #003366; color: white !important; text-decoration: none; border-radius: 8px; font-weight: bold; text-align: center; margin-bottom: 20px; }
+    .wa-button { display: block; padding: 12px; background-color: #25D366; color: white !important; text-decoration: none; border-radius: 8px; font-weight: bold; text-align: center; margin-top: 10px; }
     .wa-fail { background-color: #6c757d !important; }
     .status-red { background-color: #f8d7da; color: #721c24; padding: 10px; border-radius: 8px; text-align: center; font-weight: bold; }
     .status-green { background-color: #d4edda; color: #155724; padding: 10px; border-radius: 8px; text-align: center; font-weight: bold; }
-    .countdown-text { 
-        font-size: 18px; font-weight: bold; color: #d32f2f; text-align: center; 
-        background: #fff3e0; padding: 10px; border-radius: 10px; border: 1px solid #ffe0b2; 
+    .countdown-text { font-size: 18px; font-weight: bold; color: #d32f2f; text-align: center; background: #fff3e0; padding: 10px; border-radius: 10px; border: 1px solid #ffe0b2; }
+    .lotto-ball { background-color: #FFD700; color: black; border-radius: 50%; padding: 5px 8px; margin: 2px; font-weight: bold; border: 1px solid #b8860b; display: inline-block; min-width: 32px; text-align: center; }
+    
+    /* ANIMAZIONE MONETE GIGANTI */
+    @keyframes payout {
+        0% { transform: translateY(100px); opacity: 0; }
+        50% { opacity: 1; }
+        100% { transform: translateY(-100px); opacity: 0; }
     }
-    .lotto-ball {
-        background-color: #FFD700; color: black; border-radius: 50%; 
-        padding: 5px 8px; margin: 2px; font-weight: bold; 
-        border: 1px solid #b8860b; display: inline-block; min-width: 32px; text-align: center;
+    .money-rain {
+        font-size: 80px; text-align: center; animation: payout 2s infinite; margin: 20px 0;
     }
     </style>
     """, unsafe_allow_html=True)
 
-# Funzione per l'audio (che funzionava già)
-def play_audio(url):
-    st.components.v1.html(f'<audio autoplay><source src="{url}" type="audio/mpeg"></audio>', height=0)
-
 # --- INTERFACCIA ---
 st.title("🍀 Regalati un Sogno")
 
+# COUNTDOWN
 now = datetime.now()
 target = now.replace(hour=20, minute=0, second=0, microsecond=0)
 if now > target: target += timedelta(days=1)
@@ -60,6 +52,7 @@ scelta = st.selectbox("🧭 COSA VUOI FARE?", ["🔍 Verifica Vincita", "📅 St
 st.divider()
 
 if scelta == "🔍 Verifica Vincita":
+    # ... (parte iniziale della verifica uguale) ...
     st.subheader("📋 Verifica Estrazione")
     st.markdown('<a href="https://www.adm.gov.it/portale/monopoli/giochi/giochi_num_total/superenalotto" target="_blank" class="ams-button">➡️ PASSO 1: Sito Ufficiale AMS</a>', unsafe_allow_html=True)
 
@@ -90,9 +83,11 @@ if scelta == "🔍 Verifica Vincita":
             if len(indovinati) >= 2: vincite.append((i, len(indovinati), indovinati))
         
         if vincite:
-            # EFFETTI VINCITA
-            play_audio("https://www.myinstants.com/media/sounds/ta-da.mp3")
-            st.image("https://media0.giphy.com/media/v1.Y2lkPTc5MGI3NjExOHJmZzRreGZ6ZzRreGZ6ZzRreGZ6ZzRreGZ6ZzRreGZ6ZzRreCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9cw/l0ExhcOSvFGknvEqc/giphy.gif", use_container_width=True)
+            # AUDIO + EFFETTO MONETE (EMOJI)
+            st.components.v1.html('<audio autoplay><source src="https://www.myinstants.com/media/sounds/ta-da.mp3" type="audio/mpeg"></audio>', height=0)
+            
+            # Mostriamo 3 emoji di monete che saltano (animazione CSS)
+            st.markdown('<div class="money-rain">💰 💰 💰</div>', unsafe_allow_html=True)
             
             testo_wa = "🥳 *VINCITA SUPERENALOTTO!*\n\n"
             for v in vincite:
@@ -100,12 +95,12 @@ if scelta == "🔍 Verifica Vincita":
                 testo_wa += f"✅ Schedina {v[0]}: *{v[1]} Punti* ({', '.join(map(str, v[2]))})\n"
             st.markdown(f'<a href="https://wa.me/?text={urllib.parse.quote(testo_wa)}" target="_blank" class="wa-button">📲 PASSO 3: Invia Vincita</a>', unsafe_allow_html=True)
         else:
-            play_audio("https://www.myinstants.com/media/sounds/sad-trombone.mp3")
+            st.components.v1.html('<audio autoplay><source src="https://www.myinstants.com/media/sounds/sad-trombone.mp3" type="audio/mpeg"></audio>', height=0)
             st.warning("Nessuna vincita rilevata. 💸")
             testo_perso = "❌ *ESITO ESTRAZIONE*\n\nNiente da fare ragazzi. Anche stasera il jet privato lo compriamo domani. Si torna a lavorare! 😭💸"
             st.markdown(f'<a href="https://wa.me/?text={urllib.parse.quote(testo_perso)}" target="_blank" class="wa-button wa-fail">📲 Avvisa i soci del fallimento</a>', unsafe_allow_html=True)
 
-# ... (Resto delle sezioni rimane invariato)
+# ... (le altre sezioni rimangono uguali)
 elif scelta == "📅 Stato Abbonamento":
     st.subheader("📅 Gestione Abbonamento")
     fatti = st.slider("Concorsi giocati", 0, 15, value=0)
