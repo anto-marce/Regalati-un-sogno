@@ -90,5 +90,5 @@ if scelta == "🔍 Verifica Vincita":
             for r in results:
                 st.success(f"🔥 Schedina {r[0]}: {r[1]} Punti! ({r[2]})")
                 msg += f"✅ Sch {r[0]}: {r[1]} Pt ({r[2]})\n"
-            st.markdown(f'<a href="https://wa.me/?text={urllib.parse.quote(msg)}" target="_blank" class="wa-button">📲 CONDIVIDI SU WHATSAPP</a>', unsafe_allow
+            st.markdown(f'<a href="https://wa.me/?text={urllib.parse.quote(msg)})" target="_blank" class="wa-button">📲 CONDIVIDI SU WHATSAPP</a>', unsafe_allow
             
