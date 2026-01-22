@@ -8,7 +8,7 @@ from num2words import num2words
 # 1. IMPOSTAZIONI PAGINA
 st.set_page_config(page_title="Regalati un Sogno", page_icon="🍀", layout="centered")
 
-# 2. STILE CSS
+# 2. STILE CSS E ANIMAZIONE MONETE
 st.markdown("""
     <style>
     .stSelectbox div[data-baseweb="select"] { border: 2px solid #003366 !important; border-radius: 10px; }
@@ -41,6 +41,35 @@ st.markdown("""
     </style>
     """, unsafe_allow_html=True)
 
+def pioggia_di_monete():
+    # Script JavaScript per creare una pioggia di coriandoli gialli/oro (effetto monete)
+    st.components.v1.html("""
+        <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.5.1/dist/confetti.browser.min.js"></script>
+        <script>
+            var end = Date.now() + (5 * 1000); // Dura 5 secondi
+            var colors = ['#ffd700', '#ffaa00', '#ffd700', '#ffffff'];
+            (function frame() {
+                confetti({
+                    particleCount: 10,
+                    angle: 60,
+                    spread: 55,
+                    origin: { x: 0 },
+                    colors: colors
+                });
+                confetti({
+                    particleCount: 10,
+                    angle: 120,
+                    spread: 55,
+                    origin: { x: 1 },
+                    colors: colors
+                });
+                if (Date.now() < end) {
+                    requestAnimationFrame(frame);
+                }
+            }());
+        </script>
+    """, height=0)
+
 # --- FUNZIONI CORE ---
 def salva_vincita(punti, importo_netto):
     nuovo_dato = {'Data': datetime.now().strftime("%d/%m/%Y %H:%M"), 'Punti': punti, 'Euro_Netto': importo_netto}
@@ -66,14 +95,13 @@ def formatta_euro_testo(cifra):
 # --- INTERFACCIA ---
 st.title("🍀 Regalati un Sogno")
 
-# COUNTDOWN (Solo Ore e Minuti)
+# COUNTDOWN
 now = datetime.now()
 target = now.replace(hour=20, minute=0, second=0, microsecond=0)
 if now > target: target += timedelta(days=1)
 diff = target - now
 ore, resto = divmod(diff.seconds, 3600)
-minuti, _ = divmod(resto, 60) # Ignoriamo i secondi
-
+minuti, _ = divmod(resto, 60)
 st.markdown(f'<div class="countdown-text">⏳ Prossima estrazione tra: {ore}h {minuti}m</div>', unsafe_allow_html=True)
 
 scelta = st.selectbox("🧭 COSA VUOI FARE?", ["🔍 Verifica Vincita", "📅 Stato Abbonamento", "💰 Calcolo Quote", "🏛️ Il Bottino"])
@@ -110,7 +138,7 @@ if scelta == "🔍 Verifica Vincita":
             if len(indovinati) >= 2: vincite.append((i, len(indovinati), indovinati))
         
         if vincite:
-            st.balloons()
+            pioggia_di_monete() # <-- LA NUOVA ANIMAZIONE CASCATA SLOT
             testo_wa = "🥳 *VINCITA SUPERENALOTTO!*\n\n"
             for v in vincite:
                 st.success(f"🔥 **SCHEDINA {v[0]}:** {v[1]} PUNTI! ({v[2]})")
@@ -121,6 +149,7 @@ if scelta == "🔍 Verifica Vincita":
             testo_perso = "❌ *ESITO ESTRAZIONE*\n\nNiente da fare ragazzi. Anche stasera il jet privato lo compriamo domani. Si torna a lavorare! 😭💸"
             st.markdown(f'<a href="https://wa.me/?text={urllib.parse.quote(testo_perso)}" target="_blank" class="wa-button wa-fail">📲 Avvisa i soci del fallimento</a>', unsafe_allow_html=True)
 
+# ... (il resto del codice per Abbonamento, Calcolo e Bottino rimane identico)
 elif scelta == "📅 Stato Abbonamento":
     st.subheader("📅 Gestione Abbonamento")
     fatti = st.slider("Concorsi giocati", 0, 15, value=0)
@@ -128,7 +157,6 @@ elif scelta == "📅 Stato Abbonamento":
     m1, m2 = st.columns(2)
     m1.metric("Rimanenti", f"{rimanenti}/15")
     st.progress(fatti / 15)
-    
     st.divider()
     st.subheader("👥 Cassa Soci")
     soci = ["VS", "MM", "ED", "AP", "GGC", "AM"]
@@ -137,7 +165,6 @@ elif scelta == "📅 Stato Abbonamento":
     for i, s in enumerate(soci):
         with c1 if i < 3 else c2:
             if st.checkbox(f"Quota {s}", key=f"paga_{s}"): pagati += 1
-    
     m2.metric("Soci Pagati", f"{pagati}/6")
     status_class = "status-green" if pagati == 6 else "status-red"
     st.markdown(f'<div class="{status_class}">CASSA: {pagati}/6 SOCI PAGATI</div>', unsafe_allow_html=True)
