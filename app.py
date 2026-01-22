@@ -4,15 +4,11 @@ import pandas as pd
 from datetime import datetime, timedelta
 import urllib.parse
 from num2words import num2words
-from streamlit_autorefresh import st_autorefresh
 
 # 1. IMPOSTAZIONI PAGINA
 st.set_page_config(page_title="Regalati un Sogno", page_icon="🍀", layout="centered")
 
-# Auto-refresh ogni 30 secondi per aggiornare il countdown senza scaricare la batteria
-st_autorefresh(interval=30000, key="countdown_refresh")
-
-# 2. STILE CSS PERSONALIZZATO
+# 2. STILE CSS
 st.markdown("""
     <style>
     .stSelectbox div[data-baseweb="select"] { border: 2px solid #003366 !important; border-radius: 10px; }
@@ -46,10 +42,6 @@ st.markdown("""
     """, unsafe_allow_html=True)
 
 # --- FUNZIONI CORE ---
-def play_audio(url):
-    audio_html = f'<audio autoplay="true" style="display:none;"><source src="{url}" type="audio/mpeg"></audio>'
-    st.components.v1.html(audio_html, height=0)
-
 def salva_vincita(punti, importo_netto):
     nuovo_dato = {'Data': datetime.now().strftime("%d/%m/%Y %H:%M"), 'Punti': punti, 'Euro_Netto': importo_netto}
     try:
@@ -74,14 +66,15 @@ def formatta_euro_testo(cifra):
 # --- INTERFACCIA ---
 st.title("🍀 Regalati un Sogno")
 
-# SEZIONE COUNTDOWN
+# COUNTDOWN (Solo Ore e Minuti)
 now = datetime.now()
 target = now.replace(hour=20, minute=0, second=0, microsecond=0)
 if now > target: target += timedelta(days=1)
 diff = target - now
 ore, resto = divmod(diff.seconds, 3600)
-minuti, secondi = divmod(resto, 60)
-st.markdown(f'<div class="countdown-text">⏳ Prossima estrazione tra: {ore}h {minuti}m {secondi}s</div>', unsafe_allow_html=True)
+minuti, _ = divmod(resto, 60) # Ignoriamo i secondi
+
+st.markdown(f'<div class="countdown-text">⏳ Prossima estrazione tra: {ore}h {minuti}m</div>', unsafe_allow_html=True)
 
 scelta = st.selectbox("🧭 COSA VUOI FARE?", ["🔍 Verifica Vincita", "📅 Stato Abbonamento", "💰 Calcolo Quote", "🏛️ Il Bottino"])
 st.divider()
@@ -118,14 +111,12 @@ if scelta == "🔍 Verifica Vincita":
         
         if vincite:
             st.balloons()
-            play_audio("https://www.myinstants.com/media/sounds/ta-da.mp3")
             testo_wa = "🥳 *VINCITA SUPERENALOTTO!*\n\n"
             for v in vincite:
                 st.success(f"🔥 **SCHEDINA {v[0]}:** {v[1]} PUNTI! ({v[2]})")
                 testo_wa += f"✅ Schedina {v[0]}: *{v[1]} Punti* ({', '.join(map(str, v[2]))})\n"
             st.markdown(f'<a href="https://wa.me/?text={urllib.parse.quote(testo_wa)}" target="_blank" class="wa-button">📲 PASSO 3: Invia Vincita</a>', unsafe_allow_html=True)
         else:
-            play_audio("https://www.myinstants.com/media/sounds/sad-trombone.mp3")
             st.warning("Nessuna vincita rilevata. 💸")
             testo_perso = "❌ *ESITO ESTRAZIONE*\n\nNiente da fare ragazzi. Anche stasera il jet privato lo compriamo domani. Si torna a lavorare! 😭💸"
             st.markdown(f'<a href="https://wa.me/?text={urllib.parse.quote(testo_perso)}" target="_blank" class="wa-button wa-fail">📲 Avvisa i soci del fallimento</a>', unsafe_allow_html=True)
@@ -134,10 +125,8 @@ elif scelta == "📅 Stato Abbonamento":
     st.subheader("📅 Gestione Abbonamento")
     fatti = st.slider("Concorsi giocati", 0, 15, value=0)
     rimanenti = 15 - fatti
-    
     m1, m2 = st.columns(2)
     m1.metric("Rimanenti", f"{rimanenti}/15")
-    
     st.progress(fatti / 15)
     
     st.divider()
@@ -160,14 +149,7 @@ elif scelta == "💰 Calcolo Quote":
         netto = premio - ((premio - 500) * 0.20 if premio > 500 else 0)
         quota = round(netto/6, 2)
         testo_lettere = formatta_euro_testo(quota)
-        
-        st.markdown(f"""
-            <div class="quota-box">
-                <span class="quota-valore">{quota:.2f} € a testa</span>
-                <span class="quota-testo">{testo_lettere}</span>
-            </div>
-        """, unsafe_allow_html=True)
-        
+        st.markdown(f'<div class="quota-box"><span class="quota-valore">{quota:.2f} € a testa</span><span class="quota-testo">{testo_lettere}</span></div>', unsafe_allow_html=True)
         if st.button("💾 Salva nel Bottino"):
             salva_vincita("Vincita", netto)
             st.toast("Salvato!")
@@ -179,7 +161,6 @@ elif scelta == "🏛️ Il Bottino":
         st.dataframe(df, use_container_width=True)
         st.metric("Totale Netto Accumulato", f"{df['Euro_Netto'].sum():.2f} €")
     else: st.info("Archivio vuoto.")
-    
     st.divider()
     st.write("**Le nostre sestine:**")
     sestine = ["03-10-17-40-85-86", "10-17-19-40-85-86", "17-19-40-75-85-86", "03-19-40-75-85-86", "03-10-19-75-85-86", "03-10-17-75-85-86"]
