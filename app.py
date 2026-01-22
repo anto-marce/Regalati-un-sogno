@@ -25,17 +25,18 @@ st.markdown("""
     </style>
     """, unsafe_allow_html=True)
 
-# 3. LOGICA CALENDARIO UFFICIALE
+# 3. LOGICA CALENDARIO UFFICIALE (Aggiornata alle ore 19:00)
 def calcola_prossima_estrazione():
     adesso = datetime.now()
     giorni_estrazione = [1, 3, 4, 5] # Mar, Gio, Ven, Sab
+    # Impostato alle 19:00 come richiesto
     prossima = adesso.replace(hour=19, minute=0, second=0, microsecond=0)
     
     if adesso.weekday() not in giorni_estrazione or adesso >= prossima:
         for i in range(1, 8):
             test_data = adesso + timedelta(days=i)
             if test_data.weekday() in giorni_estrazione:
-                return test_data.replace(hour=20, minute=0, second=0, microsecond=0)
+                return test_data.replace(hour=19, minute=0, second=0, microsecond=0)
     return prossima
 
 now = datetime.now()
@@ -65,7 +66,7 @@ def carica_archivio():
 
 # --- INTERFACCIA ---
 st.title("🍀 Regalati un Sogno")
-st.markdown(f'<div class="countdown-text">⏳ Prossima estrazione: {testo_timer}</div>', unsafe_allow_html=True)
+st.markdown(f'<div class="countdown-text">⏳ Prossima estrazione (ore 19:00): {testo_timer}</div>', unsafe_allow_html=True)
 
 scelta = st.selectbox("🧭 COSA VUOI FARE?", ["🔍 Verifica Vincita", "📅 Stato Abbonamento", "💰 Calcolo Quote", "🏛️ Il Bottino"])
 st.divider()
