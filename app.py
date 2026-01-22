@@ -5,44 +5,51 @@ from datetime import datetime
 import urllib.parse
 from streamlit_extras.let_it_rain import rain 
 
-# --- CONFIGURAZIONE BLINDATA ---
-st.set_page_config(page_title="Regalati un Sogno v2.1", page_icon="🍀", layout="centered")
+# --- CONFIGURAZIONE ---
+st.set_page_config(page_title="Regalati un Sogno v2.2", page_icon="🍀", layout="centered")
 
-# --- STILE CSS ACCESSIBILE (Contrasto Elevato) ---
+# --- STILE CSS UNIVERSALE (Light & Dark Mode) ---
 st.markdown("""
     <style>
-    /* Selectbox e Input */
-    .stSelectbox div[data-baseweb="select"] { border: 2px solid #001f3f !important; border-radius: 10px; }
-    div[data-testid="stNumberInput"] input { 
-        font-size: 24px !important; text-align: center !important; font-weight: 900 !important; 
-        color: #001f3f !important; border: 2px solid #001f3f !important; background-color: #f8f9fa !important;
-    }
+    /* Input e Selectbox con bordi neutri ma visibili */
+    .stSelectbox div[data-baseweb="select"] { border: 2px solid #4CAF50 !important; border-radius: 10px; }
     
-    /* Box Risultato Vincita */
+    /* Box Risultato Vincita - Sfondo adattivo con bordo luminoso */
     .quota-box { 
-        text-align: center; background-color: #ffffff; padding: 30px; 
-        border-radius: 15px; border: 4px solid #053d08; margin-top: 20px;
-        box-shadow: 0px 4px 10px rgba(0,0,0,0.1);
+        text-align: center; 
+        background-color: rgba(76, 175, 80, 0.1); 
+        padding: 30px; 
+        border-radius: 15px; 
+        border: 3px solid #4CAF50; 
+        margin-top: 20px;
     }
-    .quota-titolo { font-size: 20px; color: #001f3f; font-weight: 800; display: block; margin-bottom: 10px; }
-    .quota-valore { font-size: 36px; font-weight: 900; color: #053d08; display: block; }
     
-    /* Bottoni */
+    /* Colore Oro/Verde per i valori, leggibile su bianco e nero */
+    .quota-titolo { font-size: 20px; font-weight: 800; color: #4CAF50; display: block; margin-bottom: 10px; }
+    .quota-valore { font-size: 38px; font-weight: 900; color: #FFD700; display: block; text-shadow: 1px 1px 2px #000; }
+    
+    /* Bottoni ad alto contrasto */
     .wa-button { 
-        display: inline-block; padding: 14px 20px; background-color: #128C7E; color: #ffffff !important; 
-        text-decoration: none; border-radius: 8px; width: 100%; text-align: center; font-weight: 800; font-size: 18px;
+        display: inline-block; padding: 14px 20px; background-color: #25D366; color: white !important; 
+        text-decoration: none; border-radius: 10px; width: 100%; text-align: center; font-weight: 800; font-size: 18px;
     }
     .ams-button { 
-        display: inline-block; padding: 12px 20px; background-color: #001f3f; color: #ffffff !important; 
-        text-decoration: none; border-radius: 8px; width: 100%; text-align: center; font-weight: bold;
+        display: inline-block; padding: 12px 20px; background-color: #2196F3; color: white !important; 
+        text-decoration: none; border-radius: 10px; width: 100%; text-align: center; font-weight: bold;
     }
     
-    /* Stati Cassa */
-    .status-red { background-color: #ffcccc; color: #990000; padding: 12px; border-radius: 8px; text-align: center; font-weight: 900; border: 2px solid #990000; }
-    .status-green { background-color: #ccffcc; color: #053d08; padding: 12px; border-radius: 8px; text-align: center; font-weight: 900; border: 2px solid #053d08; }
+    /* Stati Cassa Adattivi */
+    .status-red { 
+        background-color: rgba(255, 82, 82, 0.2); color: #FF5252; 
+        padding: 12px; border-radius: 10px; text-align: center; font-weight: 900; border: 2px solid #FF5252; 
+    }
+    .status-green { 
+        background-color: rgba(76, 175, 80, 0.2); color: #4CAF50; 
+        padding: 12px; border-radius: 10px; text-align: center; font-weight: 900; border: 2px solid #4CAF50; 
+    }
     
-    /* Testi Generali */
-    p, span, label { color: #001f3f !important; font-weight: 600; }
+    /* Forza visibilità etichette slider e checkbox */
+    label p { font-size: 18px !important; font-weight: 700 !important; }
     </style>
     """, unsafe_allow_html=True)
 
@@ -76,15 +83,15 @@ st.divider()
 if scelta == "🔍 Verifica Vincita":
     st.markdown('<a href="https://www.adm.gov.it/portale/monopoli/giochi/giochi_num_total/superenalotto" target="_blank" class="ams-button">➡️ APRI SITO UFFICIALE AMS</a>', unsafe_allow_html=True)
     
-    txt = st.text_input("1. Incolla qui i numeri estratti:", placeholder="Es. 3 10 17 40 85 86")
+    txt = st.text_input("1. Incolla numeri:", placeholder="Es. 3 10 17 40 85 86")
     if st.button("Carica Numeri ⤵️"):
         nums = [int(n) for n in re.findall(r'\d+', txt) if 1 <= int(n) <= 90]
         if len(nums) >= 6:
             for i in range(6): st.session_state[f"n{i}"] = nums[i]
             st.rerun()
-        else: st.error("Trovati meno di 6 numeri validi (1-90).")
+        else: st.error("Inserisci almeno 6 numeri validi.")
 
-    with st.expander("👁️ Controllo Manuale", expanded=False):
+    with st.expander("👁️ Modifica Manuale", expanded=False):
         c = st.columns(6)
         for i in range(6):
             st.session_state[f"n{i}"] = c[i].number_input(f"{i+1}°", 1, 90, key=f"f{i}", value=st.session_state[f"n{i}"])
@@ -105,7 +112,7 @@ if scelta == "🔍 Verifica Vincita":
                 msg += f"✅ Sch {r[0]}: {r[1]} Pt ({r[2]})\n"
             st.markdown(f'<a href="https://wa.me/?text={urllib.parse.quote(msg)}" target="_blank" class="wa-button">📲 CONDIVIDI SU WHATSAPP</a>', unsafe_allow_html=True)
         else:
-            st.info("Nessuna vincita rilevata con questi numeri.")
+            st.info("Nessuna vincita rilevata.")
 
 elif scelta == "📅 Abbonamento":
     st.subheader("📊 Stato Giocate")
@@ -122,27 +129,27 @@ elif scelta == "📅 Abbonamento":
     c1, c2 = st.columns(2)
     for i, s in enumerate(soci):
         col = c1 if i < 3 else c2
-        if col.checkbox(f"Quota da {s}", key=f"p_{s}"): pagati += 1
+        if col.checkbox(f"Quota {s}", key=f"p_{s}"): pagati += 1
     
     if pagati == 6: st.markdown('<div class="status-green">✅ CASSA COMPLETA</div>', unsafe_allow_html=True)
     else: st.markdown(f'<div class="status-red">⏳ MANCANO {6-pagati} QUOTE</div>', unsafe_allow_html=True)
 
 elif scelta == "💰 Calcolo Quote":
     st.subheader("💰 Calcolo Ripartizione")
-    lordo = st.number_input("Inserisci Premio Lordo (€)", min_value=0.0, format="%.2f", step=100.0)
+    lordo = st.number_input("Premio Lordo (€)", min_value=0.0, format="%.2f", step=100.0)
     if lordo > 0:
         netto = lordo - ((lordo-500)*0.20 if lordo > 500 else 0)
         st.markdown(f"""
             <div class="quota-box">
-                <span class="quota-titolo">VINCITA NETTA PER SOCIO:</span>
+                <span class="quota-titolo">VINCITA PER SOCIO (NETTA):</span>
                 <span class="quota-valore">{format_it(netto/6)} €</span>
-                <hr style="border: 1px solid #001f3f;">
-                <span style="color: #001f3f;">Totale Netto Gruppo: {format_it(netto)} €</span>
+                <hr style="border: 1px solid #4CAF50;">
+                <span style="font-weight: bold;">Totale Netto Gruppo: {format_it(netto)} €</span>
             </div>
         """, unsafe_allow_html=True)
         if st.button("💾 REGISTRA NEL BOTTINO"):
             db_save("Vincita", netto)
-            st.toast("Salvato con successo!")
+            st.toast("Salvato!")
 
 elif scelta == "🏛️ Il Bottino":
     st.subheader("📜 Storico Vincite")
@@ -153,4 +160,4 @@ elif scelta == "🏛️ Il Bottino":
         st.table(df_view)
         st.metric("TOTALE ACCUMULATO", f"{format_it(df['Euro_Netto'].sum())} €")
     else:
-        st.info("L'archivio è ancora vuoto.")
+        st.info("L'archivio è vuoto.")
