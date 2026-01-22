@@ -25,34 +25,31 @@ st.markdown("""
     </style>
     """, unsafe_allow_html=True)
 
-# 3. LOGICA CALENDARIO UFFICIALE (Mar, Gio, Ven, Sab)
+# 3. LOGICA CALENDARIO UFFICIALE
 def calcola_prossima_estrazione():
     adesso = datetime.now()
-    giorni_estrazione = [1, 3, 4, 5] # Lun=0, Mar=1, Mer=2, Gio=3, Ven=4, Sab=5, Dom=6
-    
+    giorni_estrazione = [1, 3, 4, 5] # Mar, Gio, Ven, Sab
     prossima = adesso.replace(hour=20, minute=0, second=0, microsecond=0)
     
-    # Se oggi è giorno di estrazione ma sono passate le 20, o se oggi non è giorno di estrazione
     if adesso.weekday() not in giorni_estrazione or adesso >= prossima:
-        # Cerca il prossimo giorno valido
         for i in range(1, 8):
             test_data = adesso + timedelta(days=i)
             if test_data.weekday() in giorni_estrazione:
                 return test_data.replace(hour=20, minute=0, second=0, microsecond=0)
     return prossima
 
+now = datetime.now()
 target = calcola_prossima_estrazione()
-diff = target - adesso
+diff = target - now
 giorni = diff.days
 ore, resto = divmod(diff.seconds, 3600)
 minuti, _ = divmod(resto, 60)
 
-# Formattazione testo countdown
 testo_timer = f"{ore}h {minuti}m"
 if giorni > 0:
     testo_timer = f"{giorni}g " + testo_timer
 
-# 4. FUNZIONI DI SUPPORTO
+# 4. FUNZIONI SUPPORTO
 def salva_vincita(punti, importo_netto):
     nuovo_dato = {'Data': datetime.now().strftime("%d/%m/%Y %H:%M"), 'Punti': punti, 'Euro_Netto': importo_netto}
     try:
@@ -68,7 +65,6 @@ def carica_archivio():
 
 # --- INTERFACCIA ---
 st.title("🍀 Regalati un Sogno")
-
 st.markdown(f'<div class="countdown-text">⏳ Prossima estrazione: {testo_timer}</div>', unsafe_allow_html=True)
 
 scelta = st.selectbox("🧭 COSA VUOI FARE?", ["🔍 Verifica Vincita", "📅 Stato Abbonamento", "💰 Calcolo Quote", "🏛️ Il Bottino"])
@@ -98,7 +94,6 @@ if scelta == "🔍 Verifica Vincita":
 
     if st.button("VERIFICA ORA 🚀", type="primary", use_container_width=True):
         set_estratti = set(final_nums)
-        # Sestine Soci
         SCHEDINE = [{3,10,17,40,85,86}, {10,17,19,40,85,86}, {17,19,40,75,85,86}, {3,19,40,75,85,86}, {3,10,19,75,85,86}, {3,10,17,75,85,86}]
         vincite = []
         for i, sch in enumerate(SCHEDINE, 1):
