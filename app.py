@@ -38,33 +38,12 @@ st.markdown("""
         padding: 5px 8px; margin: 2px; font-weight: bold; 
         border: 1px solid #b8860b; display: inline-block; min-width: 32px; text-align: center;
     }
-    /* Stile per la cascata di monete (GIF) */
-    .coin-overlay {
-        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-        z-index: 9999; pointer-events: none;
-    }
     </style>
     """, unsafe_allow_html=True)
 
-# Funzione Audio + Cascata (GIF)
-def trigger_vincita_visiva():
-    # Audio + Visualizzazione GIF Monete per 5 secondi
-    st.components.v1.html("""
-        <audio autoplay><source src="https://www.myinstants.com/media/sounds/ta-da.mp3" type="audio/mpeg"></audio>
-        <div id="coins" style="position:fixed; top:0; left:0; width:100vw; height:100vh; pointer-events:none; z-index:9999;">
-            <img src="https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExNHJmZzRreGZ6ZzRreGZ6ZzRreGZ6ZzRreGZ6ZzRreGZ6ZzRreCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9cw/l0ExhcOSvFGknvEqc/giphy.gif" style="width:100%; height:100%; object-fit:cover; opacity:0.8;">
-        </div>
-        <script>
-            setTimeout(function(){
-                document.getElementById('coins').style.display = 'none';
-            }, 5000);
-        </script>
-    """, height=0)
-
-def trigger_perso_audio():
-    st.components.v1.html("""
-        <audio autoplay><source src="https://www.myinstants.com/media/sounds/sad-trombone.mp3" type="audio/mpeg"></audio>
-    """, height=0)
+# Funzione per l'audio (che funzionava già)
+def play_audio(url):
+    st.components.v1.html(f'<audio autoplay><source src="{url}" type="audio/mpeg"></audio>', height=0)
 
 # --- INTERFACCIA ---
 st.title("🍀 Regalati un Sogno")
@@ -111,19 +90,22 @@ if scelta == "🔍 Verifica Vincita":
             if len(indovinati) >= 2: vincite.append((i, len(indovinati), indovinati))
         
         if vincite:
-            trigger_vincita_visiva() # <-- ORA CARICA LA GIF MONETE
+            # EFFETTI VINCITA
+            play_audio("https://www.myinstants.com/media/sounds/ta-da.mp3")
+            st.image("https://media0.giphy.com/media/v1.Y2lkPTc5MGI3NjExOHJmZzRreGZ6ZzRreGZ6ZzRreGZ6ZzRreGZ6ZzRreGZ6ZzRreCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9cw/l0ExhcOSvFGknvEqc/giphy.gif", use_container_width=True)
+            
             testo_wa = "🥳 *VINCITA SUPERENALOTTO!*\n\n"
             for v in vincite:
                 st.success(f"🔥 **SCHEDINA {v[0]}:** {v[1]} PUNTI! ({v[2]})")
                 testo_wa += f"✅ Schedina {v[0]}: *{v[1]} Punti* ({', '.join(map(str, v[2]))})\n"
             st.markdown(f'<a href="https://wa.me/?text={urllib.parse.quote(testo_wa)}" target="_blank" class="wa-button">📲 PASSO 3: Invia Vincita</a>', unsafe_allow_html=True)
         else:
-            trigger_perso_audio()
+            play_audio("https://www.myinstants.com/media/sounds/sad-trombone.mp3")
             st.warning("Nessuna vincita rilevata. 💸")
             testo_perso = "❌ *ESITO ESTRAZIONE*\n\nNiente da fare ragazzi. Anche stasera il jet privato lo compriamo domani. Si torna a lavorare! 😭💸"
             st.markdown(f'<a href="https://wa.me/?text={urllib.parse.quote(testo_perso)}" target="_blank" class="wa-button wa-fail">📲 Avvisa i soci del fallimento</a>', unsafe_allow_html=True)
 
-# ... (Restanti sezioni invariate)
+# ... (Resto delle sezioni rimane invariato)
 elif scelta == "📅 Stato Abbonamento":
     st.subheader("📅 Gestione Abbonamento")
     fatti = st.slider("Concorsi giocati", 0, 15, value=0)
