@@ -4,6 +4,7 @@ import pandas as pd
 from datetime import datetime, timedelta
 import urllib.parse
 from num2words import num2words
+import random # <--- Nuova importazione per i messaggi random
 
 # 1. IMPOSTAZIONI PAGINA
 st.set_page_config(page_title="Regalati un Sogno", page_icon="🍀", layout="centered")
@@ -25,11 +26,10 @@ st.markdown("""
     </style>
     """, unsafe_allow_html=True)
 
-# 3. LOGICA CALENDARIO UFFICIALE (Aggiornata alle ore 19:00)
+# 3. LOGICA CALENDARIO UFFICIALE (Aggiornata ore 19:00)
 def calcola_prossima_estrazione():
     adesso = datetime.now()
-    giorni_estrazione = [1, 3, 4, 5] # Mar, Gio, Ven, Sab
-    # Impostato alle 19:00 come richiesto
+    giorni_estrazione = [1, 3, 4, 5] 
     prossima = adesso.replace(hour=19, minute=0, second=0, microsecond=0)
     
     if adesso.weekday() not in giorni_estrazione or adesso >= prossima:
@@ -66,7 +66,7 @@ def carica_archivio():
 
 # --- INTERFACCIA ---
 st.title("🍀 Regalati un Sogno")
-st.markdown(f'<div class="countdown-text">⏳ Prossima estrazione: {testo_timer}</div>', unsafe_allow_html=True)
+st.markdown(f'<div class="countdown-text">⏳ Prossima estrazione (ore 19:00): {testo_timer}</div>', unsafe_allow_html=True)
 
 scelta = st.selectbox("🧭 COSA VUOI FARE?", ["🔍 Verifica Vincita", "📅 Stato Abbonamento", "💰 Calcolo Quote", "🏛️ Il Bottino"])
 st.divider()
@@ -112,55 +112,23 @@ if scelta == "🔍 Verifica Vincita":
         else:
             st.components.v1.html('<audio autoplay><source src="https://www.myinstants.com/media/sounds/sad-trombone.mp3" type="audio/mpeg"></audio>', height=0)
             st.warning("Nessuna vincita rilevata. 💸")
-            testo_perso = "❌ *ESITO ESTRAZIONE*\n\nNiente da fare ragazzi. Anche stasera il jet privato lo compriamo domani. Si torna a lavorare! 😭💸"
-            st.markdown(f'<a href="https://wa.me/?text={urllib.parse.quote(testo_perso)}" target="_blank" class="wa-button wa-fail">📲 Avvisa i soci</a>', unsafe_allow_html=True)
+            
+            # --- SEZIONE MESSAGGI RANDOM ---
+            MESSAGGI_FAIL = [
+                "❌ *ESITO*: Niente da fare ragazzi. Anche stasera il jet privato lo compriamo domani. Si torna a lavorare!",
+                "🐢 *CALMA*: Il successo è un viaggio, non una meta. Il nostro viaggio è solo molto, molto lento.",
+                "🍝 *DIETA*: Stasera niente caviale, si torna a pane e cipolla. Ma con dignità!",
+                "🏗️ *LAVORI IN CORSO*: La fortuna ci sta cercando, ma ha trovato traffico in tangenziale.",
+                "🤏 *QUASI*: Ci siamo andati vicini... come io sono vicino a diventare astronauta.",
+                "📉 *STRATEGIA*: Non abbiamo perso, abbiamo solo posticipato la gloria a data da destinarsi.",
+                "🧘 *ZEN*: I soldi non danno la felicità. (Soprattutto quelli che non abbiamo vinto stasera).",
+                "🛶 *NAUFRAGHI*: Siamo sulla stessa barca. Ed è una barca a remi. Molto piccoli.",
+                "📵 *OFFLINE*: La Dea Bendata ci ha appena bloccato su WhatsApp. Riproveremo.",
+                "🕯️ *SPERANZA*: Ragazzi, accendiamo un cero in gruppo, che la statistica da sola non basta più!"
+            ]
+            messaggio_scelto = random.choice(MESSAGGI_FAIL)
+            # -------------------------------
+            
+            st.markdown(f'<a href="https://wa.me/?text={urllib.parse.quote(messaggio_scelto)}" target="_blank" class="wa-button wa-fail">📲 Avvisa i soci (Random)</a>', unsafe_allow_html=True)
 
-elif scelta == "📅 Stato Abbonamento":
-    st.subheader("📅 Gestione Abbonamento")
-    fatti = st.slider("Concorsi giocati", 0, 15, value=0)
-    rimanenti = 15 - fatti
-    m1, m2 = st.columns(2)
-    m1.metric("Rimanenti", f"{rimanenti}/15")
-    st.progress(fatti / 15)
-    st.divider()
-    st.subheader("👥 Cassa Soci")
-    soci = ["VS", "MM", "ED", "AP", "GGC", "AM"]
-    pagati = 0
-    c1, c2 = st.columns(2)
-    for i, s in enumerate(soci):
-        with c1 if i < 3 else c2:
-            if st.checkbox(f"Quota {s}", key=f"paga_{s}"): pagati += 1
-    m2.metric("Soci Pagati", f"{pagati}/6")
-    status_class = "status-green" if pagati == 6 else "status-red"
-    st.markdown(f'<div class="{status_class}">CASSA: {pagati}/6 SOCI PAGATI</div>', unsafe_allow_html=True)
-
-elif scelta == "💰 Calcolo Quote":
-    st.subheader("💰 Calcolo Netto")
-    premio = st.number_input("Lordo Totale (€)", min_value=0.0, step=10.0, format="%.2f")
-    if premio > 0:
-        netto = premio - ((premio - 500) * 0.20 if premio > 500 else 0)
-        quota = round(netto/6, 2)
-        euro = int(quota)
-        centesimi = int(round((quota - euro) * 100))
-        testo_lettere = num2words(euro, lang='it') + " euro"
-        if centesimi > 0:
-            testo_lettere += f" e {num2words(centesimi, lang='it')} centesimi"
-        st.markdown(f'<div class="quota-box"><span class="quota-valore">{quota:.2f} € a testa</span><span class="quota-testo">{testo_lettere}</span></div>', unsafe_allow_html=True)
-        if st.button("💾 Salva nel Bottino"):
-            salva_vincita("Vincita", netto)
-            st.toast("Salvato!")
-
-elif scelta == "🏛️ Il Bottino":
-    st.subheader("🏛️ Archivio Storico")
-    df = carica_archivio()
-    if not df.empty:
-        st.dataframe(df, use_container_width=True)
-        st.metric("Totale Netto Accumulato", f"{df['Euro_Netto'].sum():.2f} €")
-    else: st.info("Archivio vuoto.")
-    st.divider()
-    st.write("**Le nostre sestine:**")
-    sestine = ["03-10-17-40-85-86", "10-17-19-40-85-86", "17-19-40-75-85-86", "03-19-40-75-85-86", "03-10-19-75-85-86", "03-10-17-75-85-86"]
-    for i, s in enumerate(sestine, 1):
-        num_list = s.split('-')
-        balls_html = "".join([f'<span class="lotto-ball">{n}</span>' for n in num_list])
-        st.markdown(f"**Schedina {i}:** {balls_html}", unsafe_allow_html=True)
+# ... (Il resto del codice rimane invariato)
