@@ -129,6 +129,6 @@ if scelta == "🔍 Verifica Vincita":
             messaggio_scelto = random.choice(MESSAGGI_FAIL)
             # -------------------------------
             
-            st.markdown(f'<a href="https://wa.me/?text={urllib.parse.quote(messaggio_scelto)}" target="_blank" class="wa-button wa-fail">📲 Avvisa i soci (Random)</a>', unsafe_allow_html=True)
+            st.markdown(f'<a href="https://wa.me/?text={urllib.parse.quote(messaggio_scelto)}" target="_blank" class="wa-button wa-fail">📲 Avvisa i soci </a>', unsafe_allow_html=True)
 
 # ... (Il resto del codice rimane invariato)
