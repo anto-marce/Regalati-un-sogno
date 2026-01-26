@@ -26,7 +26,7 @@ st.markdown("""
     </style>
     """, unsafe_allow_html=True)
 
-# 3. LOGICA CALENDARIO UFFICIALE (Ore 19:00)
+# 3. LOGICA CALENDARIO UFFICIALE
 def calcola_prossima_estrazione():
     adesso = datetime.now()
     giorni_estrazione = [1, 3, 4, 5] # Mar, Gio, Ven, Sab
@@ -66,7 +66,7 @@ def carica_archivio():
 
 # --- INTERFACCIA ---
 st.title("🍀 Regalati un Sogno")
-st.markdown(f'<div class="countdown-text">⏳ Prossima estrazione (ore 19:00): {testo_timer}</div>', unsafe_allow_html=True)
+st.markdown(f'<div class="countdown-text">⏳ Prossima estrazione: {testo_timer}</div>', unsafe_allow_html=True)
 
 scelta = st.selectbox("🧭 COSA VUOI FARE?", ["🔍 Verifica Vincita", "📅 Stato Abbonamento", "💰 Calcolo Quote", "🏛️ Il Bottino"])
 st.divider()
