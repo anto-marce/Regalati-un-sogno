@@ -112,6 +112,8 @@ if scelta == "🔍 Verifica Vincita":
         else:
             st.components.v1.html('<audio autoplay><source src="https://www.myinstants.com/media/sounds/sad-trombone.mp3" type="audio/mpeg"></audio>', height=0)
             st.warning("Nessuna vincita rilevata. 💸")
+            
+            intestazione = "❌ *ESITO ESTRAZIONE*\n\n"
             MESSAGGI_FAIL = [
                 "❌ *ESITO*: Niente da fare ragazzi. Anche stasera il jet privato lo compriamo domani. Si torna a lavorare!",
                 "🐢 *CALMA*: Il successo è un viaggio, non una meta. Il nostro viaggio è solo molto, molto lento.",
@@ -123,7 +125,20 @@ if scelta == "🔍 Verifica Vincita":
                 "🛶 *NAUFRAGHI*: Siamo sulla stessa barca. Ed è una barca a remi. Molto piccoli.",
                 "📵 *OFFLINE*: La Dea Bendata ci ha appena bloccato su WhatsApp. Riproveremo.",
                 "🕯️ *SPERANZA*: Ragazzi, accendiamo un cero in gruppo, che la statistica da sola non basta più!"
+                "🤔 Ho come il sospetto che i numeri estratti siano esattamente quelli che NON abbiamo giocato. Coincidenze? Io non credo.",
+                "😅 Guardate il lato positivo: anche stasera abbiamo risparmiato lo stress di dover gestire milioni di euro. È un sollievo, vero?",
+                "⛲ Ragazzi, disdite i voli per Honolulu. Per questa settimana il massimo che possiamo permetterci è un tuffo nella fontana del centro.",
+                "🛌 La Dea Bendata ci deve ormai così tanti favori che la prossima volta dovrebbe venirci a rimboccare le coperte.",
+                "🤖 Ho chiesto all'intelligenza artificiale quando vinceremo. Mi ha risposto con l'emoji che ride. Non è un buon segno.",
+                "🤡 I numeri erano giusti, è l'ordine di estrazione che era completamente sbagliato. Tecnicamente è un successo morale.",
+                "🐟 Aragosta rimandata a data da destinarsi. Stasera si festeggia con una scatoletta di tonno... di sottomarca.",
+                "🏔️ Vado a vivere in un monastero in Tibet. Se la fortuna non mi trova qui, magari mi trova lì. Ci sentiamo alla prossima!",
+                "🃏 Stiamo collezionando così tante sconfitte che tra poco potremo scambiarle come le figurine dei calciatori.",
+                "💸 Il mio avvocato mi aveva sconsigliato di mandarvi questo messaggio, ma purtroppo siamo ancora poveri. A martedì!"
             ]
+            
+            # Intestazione fissa richiesta
+            intestazione = "❌ *ESITO ESTRAZIONE*\n\n"
             messaggio_scelto = random.choice(MESSAGGI_FAIL)
             st.markdown(f'<a href="https://wa.me/?text={urllib.parse.quote(messaggio_scelto)}" target="_blank" class="wa-button wa-fail">📲 Avvisa i soci</a>', unsafe_allow_html=True)
 
