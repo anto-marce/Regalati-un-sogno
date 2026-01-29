@@ -26,7 +26,7 @@ st.markdown("""
     </style>
     """, unsafe_allow_html=True)
 
-# 3. LOGICA CALENDARIO UFFICIALE
+# 3. LOGICA CALENDARIO UFFICIALE (Ore 19:00)
 def calcola_prossima_estrazione():
     adesso = datetime.now()
     giorni_estrazione = [1, 3, 4, 5] # Mar, Gio, Ven, Sab
@@ -66,7 +66,7 @@ def carica_archivio():
 
 # --- INTERFACCIA ---
 st.title("🍀 Regalati un Sogno")
-st.markdown(f'<div class="countdown-text">⏳ Prossima estrazione: {testo_timer}</div>', unsafe_allow_html=True)
+st.markdown(f'<div class="countdown-text">⏳ Prossima estrazione (ore 19:00): {testo_timer}</div>', unsafe_allow_html=True)
 
 scelta = st.selectbox("🧭 COSA VUOI FARE?", ["🔍 Verifica Vincita", "📅 Stato Abbonamento", "💰 Calcolo Quote", "🏛️ Il Bottino"])
 st.divider()
@@ -104,18 +104,24 @@ if scelta == "🔍 Verifica Vincita":
         if vincite:
             st.balloons()
             st.components.v1.html('<audio autoplay><source src="https://www.myinstants.com/media/sounds/ta-da.mp3" type="audio/mpeg"></audio>', height=0)
-            testo_wa = "🥳 *VINCITA SUPERENALOTTO!*\n\n"
+            
+            # --- MESSAGGIO VITTORIA ---
+            testo_wa = "❌ *ESITO ESTRAZIONE*\n\n🥳 *ABBIAMO VINTO!*\n\n"
             for v in vincite:
                 st.success(f"🔥 **SCHEDINA {v[0]}:** {v[1]} PUNTI! ({v[2]})")
                 testo_wa += f"✅ Schedina {v[0]}: *{v[1]} Punti* ({', '.join(map(str, v[2]))})\n"
-            st.markdown(f'<a href="https://wa.me/?text={urllib.parse.quote(testo_wa)}" target="_blank" class="wa-button">📲 PASSO 3: Invia Vincita</a>', unsafe_allow_html=True)
+            
+            link_vittoria = f"https://wa.me/?text={urllib.parse.quote(testo_wa)}"
+            st.markdown(f'<a href="{link_vittoria}" target="_blank" class="wa-button">📲 PASSO 3: Invia Vincita</a>', unsafe_allow_html=True)
         else:
             st.components.v1.html('<audio autoplay><source src="https://www.myinstants.com/media/sounds/sad-trombone.mp3" type="audio/mpeg"></audio>', height=0)
             st.warning("Nessuna vincita rilevata. 💸")
             
-            intestazione = "❌ *ESITO ESTRAZIONE*\n\n"
-            MESSAGGI_FAIL = [
-                "❌ *ESITO*: Niente da fare ragazzi. Anche stasera il jet privato lo compriamo domani. Si torna a lavorare!",
+            # --- MESSAGGI SCONFITTA (Random + Intestazione Fissa) ---
+            INTESTAZIONE_FISSA = "❌ *ESITO ESTRAZIONE*\n\n"
+            
+            FRASI_RANDOM = [
+                "Niente da fare ragazzi. Anche stasera il jet privato lo compriamo domani. Si torna a lavorare!",
                 "🐢 *CALMA*: Il successo è un viaggio, non una meta. Il nostro viaggio è solo molto, molto lento.",
                 "🍝 *DIETA*: Stasera niente caviale, si torna a pane e cipolla. Ma con dignità!",
                 "🏗️ *LAVORI IN CORSO*: La fortuna ci sta cercando, ma ha trovato traffico in tangenziale.",
@@ -124,7 +130,7 @@ if scelta == "🔍 Verifica Vincita":
                 "🧘 *ZEN*: I soldi non danno la felicità. (Soprattutto quelli che non abbiamo vinto stasera).",
                 "🛶 *NAUFRAGHI*: Siamo sulla stessa barca. Ed è una barca a remi. Molto piccoli.",
                 "📵 *OFFLINE*: La Dea Bendata ci ha appena bloccato su WhatsApp. Riproveremo.",
-                "🕯️ *SPERANZA*: Ragazzi, accendiamo un cero in gruppo, che la statistica da sola non basta più!"
+                "🕯️ *SPERANZA*: Ragazzi, accendiamo un cero in gruppo, che la statistica da sola non basta più!",
                 "🤔 Ho come il sospetto che i numeri estratti siano esattamente quelli che NON abbiamo giocato. Coincidenze? Io non credo.",
                 "😅 Guardate il lato positivo: anche stasera abbiamo risparmiato lo stress di dover gestire milioni di euro. È un sollievo, vero?",
                 "⛲ Ragazzi, disdite i voli per Honolulu. Per questa settimana il massimo che possiamo permetterci è un tuffo nella fontana del centro.",
@@ -137,10 +143,13 @@ if scelta == "🔍 Verifica Vincita":
                 "💸 Il mio avvocato mi aveva sconsigliato di mandarvi questo messaggio, ma purtroppo siamo ancora poveri. A martedì!"
             ]
             
-            # Intestazione fissa richiesta
-            intestazione = "❌ *ESITO ESTRAZIONE*\n\n"
-            messaggio_scelto = random.choice(MESSAGGI_FAIL)
-            st.markdown(f'<a href="https://wa.me/?text={urllib.parse.quote(messaggio_scelto)}" target="_blank" class="wa-button wa-fail">📲 Avvisa i soci</a>', unsafe_allow_html=True)
+            messaggio_scelto = random.choice(FRASI_RANDOM)
+            testo_finale = INTESTAZIONE_FISSA + messaggio_scelto
+            
+            # Creazione Link Sicuro
+            link_sconfitta = f"https://wa.me/?text={urllib.parse.quote(testo_finale)}"
+            
+            st.markdown(f'<a href="{link_sconfitta}" target="_blank" class="wa-button wa-fail">📲 Avvisa i soci</a>', unsafe_allow_html=True)
 
 elif scelta == "📅 Stato Abbonamento":
     st.subheader("📅 Gestione Abbonamento")
@@ -191,3 +200,4 @@ elif scelta == "🏛️ Il Bottino":
         num_list = s.split('-')
         balls_html = "".join([f'<span class="lotto-ball">{n}</span>' for n in num_list])
         st.markdown(f"**Schedina {i}:** {balls_html}", unsafe_allow_html=True)
+        
