@@ -95,7 +95,7 @@ if scelta == "🔍 Verifica Vincita":
 
     if st.button("VERIFICA ORA 🚀", type="primary", use_container_width=True):
         set_estratti = set(final_nums)
-        SCHEDINE = [{3,10,17,40,85,86}, {10,17,19,40,85,86}, {17,19,40,75,85,86}, {3,19,40,75,85,86}, {3,10,19,75,85,86}, {3,10,17,75,85,86}]
+        SCHEDINE = [{3,17,23,31,85,86}, {17,23,31,78,85,86}, {17,31,78,75,85,86}, {3,31,78,75,85,86}, {3,23,78,75,85,86}, {3,23,17,75,85,86}]
         vincite = []
         for i, sch in enumerate(SCHEDINE, 1):
             indovinati = sorted(list(sch.intersection(set_estratti)))
