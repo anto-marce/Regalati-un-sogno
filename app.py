@@ -195,7 +195,7 @@ elif scelta == "🏛️ Il Bottino":
     else: st.info("Archivio vuoto.")
     st.divider()
     st.write("**Le nostre sestine:**")
-    sestine = ["03-10-17-40-85-86", "10-17-19-40-85-86", "17-19-40-75-85-86", "03-19-40-75-85-86", "03-10-19-75-85-86", "03-10-17-75-85-86"]
+    sestine = ["03-23-17-31-85-86", "23-17-31-78-85-86", "17-31-78-75-85-86", "03-31-78-75-85-86", "03-23-78-75-85-86", "03-23-17-75-85-86"]
     for i, s in enumerate(sestine, 1):
         num_list = s.split('-')
         balls_html = "".join([f'<span class="lotto-ball">{n}</span>' for n in num_list])
