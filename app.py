@@ -95,7 +95,7 @@ if scelta == "🔍 Verifica Vincita":
 
     if st.button("VERIFICA ORA 🚀", type="primary", use_container_width=True):
         set_estratti = set(final_nums)
-        SCHEDINE = [{3,17,23,31,85,86}, {17,23,31,78,85,86}, {17,31,78,75,85,86}, {3,31,78,75,85,86}, {3,23,78,75,85,86}, {3,23,17,75,85,86}]
+        SCHEDINE = [{12,21,26,57,62,75}, {29,11,24,55,1,36}, {3,10,12,85,86,90}, {9,15,36,47,55,59}, {17,19,21,44,78,79}, {4,6,29,57,83,84}]
         vincite = []
         for i, sch in enumerate(SCHEDINE, 1):
             indovinati = sorted(list(sch.intersection(set_estratti)))
@@ -121,7 +121,7 @@ if scelta == "🔍 Verifica Vincita":
             INTESTAZIONE_FISSA = "❌ *ESITO ESTRAZIONE*\n\n"
             
             FRASI_RANDOM = [
-                "Niente da fare ragazzi. Anche stasera il jet privato lo compriamo domani. Si torna a lavorare!",
+                "✈️ Niente da fare ragazzi. Anche stasera il jet privato lo compriamo domani. Si torna a lavorare!",
                 "🐢 *CALMA*: Il successo è un viaggio, non una meta. Il nostro viaggio è solo molto, molto lento.",
                 "🍝 *DIETA*: Stasera niente caviale, si torna a pane e cipolla. Ma con dignità!",
                 "🏗️ *LAVORI IN CORSO*: La fortuna ci sta cercando, ma ha trovato traffico in tangenziale.",
@@ -133,7 +133,7 @@ if scelta == "🔍 Verifica Vincita":
                 "🕯️ *SPERANZA*: Ragazzi, accendiamo un cero in gruppo, che la statistica da sola non basta più!",
                 "🤔 Ho come il sospetto che i numeri estratti siano esattamente quelli che NON abbiamo giocato. Coincidenze? Io non credo.",
                 "😅 Guardate il lato positivo: anche stasera abbiamo risparmiato lo stress di dover gestire milioni di euro. È un sollievo, vero?",
-                "⛲ Ragazzi, disdite i voli per Honolulu. Per questa settimana il massimo che possiamo permetterci è un tuffo nella fontana del centro.",
+                "⛲ Ragazzi, disdite i voli per Honolulu. Per questa settimana il massimo che possiamo permetterci è un tuffo in Arno.",
                 "🛌 La Dea Bendata ci deve ormai così tanti favori che la prossima volta dovrebbe venirci a rimboccare le coperte.",
                 "🤖 Ho chiesto all'intelligenza artificiale quando vinceremo. Mi ha risposto con l'emoji che ride. Non è un buon segno.",
                 "🤡 I numeri erano giusti, è l'ordine di estrazione che era completamente sbagliato. Tecnicamente è un successo morale.",
@@ -195,7 +195,7 @@ elif scelta == "🏛️ Il Bottino":
     else: st.info("Archivio vuoto.")
     st.divider()
     st.write("**Le nostre sestine:**")
-    sestine = ["03-23-17-31-85-86", "23-17-31-78-85-86", "17-31-78-75-85-86", "03-31-78-75-85-86", "03-23-78-75-85-86", "03-23-17-75-85-86"]
+    sestine = ["12-21-26-57-62-75", "29-11-24-55-01-36", "03-10-12-85-86-90", "09-15-36-47-55-59", "17-19-21-44-78-79", "04-06-29-57-83-84"]
     for i, s in enumerate(sestine, 1):
         num_list = s.split('-')
         balls_html = "".join([f'<span class="lotto-ball">{n}</span>' for n in num_list])
