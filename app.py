@@ -106,7 +106,7 @@ if scelta == "🔍 Verifica Vincita":
             st.components.v1.html('<audio autoplay><source src="https://www.myinstants.com/media/sounds/ta-da.mp3" type="audio/mpeg"></audio>', height=0)
             
             # --- MESSAGGIO VITTORIA ---
-            testo_wa = "❌ *ESITO ESTRAZIONE*\n\n🥳 *ABBIAMO VINTO!*\n\n"
+            testo_wa = "💰 *ESITO ESTRAZIONE*\n\n🥳 *ABBIAMO VINTO!*\n\n"
             for v in vincite:
                 st.success(f"🔥 **SCHEDINA {v[0]}:** {v[1]} PUNTI! ({v[2]})")
                 testo_wa += f"✅ Schedina {v[0]}: *{v[1]} Punti* ({', '.join(map(str, v[2]))})\n"
@@ -118,7 +118,7 @@ if scelta == "🔍 Verifica Vincita":
             st.warning("Nessuna vincita rilevata. 💸")
             
             # --- MESSAGGI SCONFITTA (Random + Intestazione Fissa) ---
-            INTESTAZIONE_FISSA = "❌ *ESITO ESTRAZIONE*\n\n"
+            INTESTAZIONE_FISSA = "💰 *ESITO ESTRAZIONE*\n\n"
             
             FRASI_RANDOM = [
                 "✈️ Niente da fare ragazzi. Anche stasera il jet privato lo compriamo domani. Si torna a lavorare!",
