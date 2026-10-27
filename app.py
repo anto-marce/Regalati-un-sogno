@@ -118,7 +118,7 @@ if scelta == "🔍 Verifica Vincita":
             st.warning("Nessuna vincita rilevata. 💸")
             
             # --- MESSAGGI SCONFITTA (Random + Intestazione Fissa) ---
-            INTESTAZIONE_FISSA = "💰 *ESITO ESTRAZIONE*\n\n"
+            INTESTAZIONE_FISSA = "🤌🏼 *ESITO ESTRAZIONE*\n\n *MACHECAZZ*\n\n"
             
             FRASI_RANDOM = [
                 "✈️ Niente da fare ragazzi. Anche stasera il jet privato lo compriamo domani. Si torna a lavorare!",
